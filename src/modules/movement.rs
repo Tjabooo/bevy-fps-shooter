@@ -1,5 +1,5 @@
-use bevy::prelude::*;
 use crate::modules::player::Player;
+use bevy::prelude::*;
 
 pub fn update(
     key_event: Res<Input<KeyCode>>,
@@ -9,11 +9,11 @@ pub fn update(
     for (mut transform, mut player) in query.iter_mut() {
         let delta_time = time.delta_seconds();
         let jump_height = player.jump_height;
-        let friction = 0.5;
+        let friction = 0.9;
 
-        let forward = transform.forward();
+        let forward = Vec3::new(transform.forward().x, 0.0, transform.forward().z).normalize_or_zero();
         let backward = -forward;
-        let right = transform.right();
+        let right = Vec3::new(transform.right().x, 0.0, transform.right().z).normalize_or_zero();
         let left = -right;
 
         let mut horizontal_velocity = Vec3::ZERO;
@@ -31,7 +31,7 @@ pub fn update(
             horizontal_velocity += right;
         }
         if key_event.just_pressed(KeyCode::Space) {
-            player.velocity.y += jump_height;
+            player.velocity = Vec3::Y * jump_height;
         }
         if key_event.pressed(KeyCode::ShiftLeft) {
             player.speed = 2.5;
@@ -39,10 +39,10 @@ pub fn update(
             player.speed = 4.0;
         }
         
-        player.velocity = player.velocity.normalize_or_zero();
         horizontal_velocity = horizontal_velocity.normalize_or_zero();
 
         player.velocity.x = horizontal_velocity.x * friction;
+        player.velocity.y *= friction;
         player.velocity.z = horizontal_velocity.z * friction;
 
         transform.translation += player.velocity * player.speed * delta_time;

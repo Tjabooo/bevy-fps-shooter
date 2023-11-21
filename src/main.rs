@@ -18,7 +18,7 @@ use bevy::{
 use modules::{
     game, 
     movement,
-    player
+    player,
 };
 use rendering::{
     lighting,
