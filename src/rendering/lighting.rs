@@ -1,5 +1,3 @@
-use bevy::prelude::*;
-
 // DirectionalLightBundle (Infinite parallel, top down) -> from_rotation(Quat::from_rotation_x(-std::f32::consts::FRAC_PI_2))
 // SpotLightBundle (Soft one-directional) -> from_xyz(0.0, 0.0, 0.0)
 // PointLightBundle (Soft omni-directional) -> from_xyz(0.0, 0.0, 0.0)
@@ -19,6 +17,8 @@ use bevy::prelude::*;
 10,000–25,000	Full daylight (not direct sun)
 32,000–100,000	Direct sunlight
 */
+
+use bevy::prelude::*;
 
 pub fn setup(mut commands: Commands, mut ambient_light: ResMut<AmbientLight>) {
     commands.spawn(DirectionalLightBundle {

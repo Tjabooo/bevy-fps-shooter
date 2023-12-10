@@ -19,6 +19,7 @@ use modules::{
     game, 
     movement,
     player,
+    events,
 };
 use rendering::{
     lighting,
@@ -31,10 +32,10 @@ fn main() {
         .add_plugins((
             DefaultPlugins.set(WindowPlugin {
                 primary_window: Some(Window {
-                    title: "Test".into(),
-                    resolution: (800., 600.).into(),
-                    //mode: WindowMode::BorderlessFullscreen,
-                    //resolution: (1920., 1080.).into(),
+                    title: "Valorant".into(),
+                    //resolution: (800., 600.).into(),
+                    mode: WindowMode::BorderlessFullscreen,
+                    resolution: (1920., 1080.).into(),
                     present_mode: PresentMode::AutoNoVsync,
                     fit_canvas_to_parent: true,
                     prevent_default_event_handling: false,
@@ -61,6 +62,7 @@ fn main() {
             RapierPhysicsPlugin::<NoUserData>::default(),
             //RapierDebugRenderPlugin::default(),
         ))
+        .insert_resource(Msaa::Sample8)
         .add_systems(Startup, game::setup)
         .add_systems(Update, game::update)
         .add_systems(Startup, entities::setup)
@@ -68,6 +70,8 @@ fn main() {
         .add_systems(Update, movement::update)
         .add_systems(Startup, player::setup)
         .add_systems(Update, player::mouse_callback)
+        .add_systems(Update, player::update)
+        .add_systems(Update, events::display_events)
         //.add_systems(Update, physics::gravity)
         .run();
 }
