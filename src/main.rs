@@ -3,12 +3,19 @@ mod rendering;
 
 use bevy_rapier3d::prelude::*;
 use bevy::{
+    prelude::*,
+    window::{
+        Cursor,
+        CursorGrabMode,
+        PresentMode, 
+        WindowMode,
+        WindowResolution,
+        WindowTheme
+    },
     diagnostic::{
         FrameTimeDiagnosticsPlugin,
         LogDiagnosticsPlugin
-    }, prelude::*, window::{
-        Cursor, CursorGrabMode, PresentMode, WindowMode, WindowResolution, WindowTheme
-    }
+    } 
 };
 use modules::{
     game, 
