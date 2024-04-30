@@ -68,7 +68,6 @@ fn main() {
         .add_systems(Startup, entities::setup)
         .add_systems(Update, entities::rotate_map)
         .add_systems(Update, entities::load_cubemap)
-        .add_systems(Update, entities::update)
         .add_systems(Startup, lighting::setup)
         .add_systems(Update, movement::update)
         .add_systems(Update, game::update)

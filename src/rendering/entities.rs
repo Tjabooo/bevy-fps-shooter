@@ -1,17 +1,12 @@
 use crate::game::CameraController;
 use bevy_rapier3d::prelude::*;
 use bevy::{
-    prelude::*,
-    window::PrimaryWindow,
-    core_pipeline::Skybox,
-    asset::LoadState,
-    render::{
-        texture::CompressedImageFormats,
+    asset::LoadState, core_pipeline::Skybox, prelude::*, render::{
         render_resource::{
             TextureViewDescriptor,
             TextureViewDimension
-        },
-    },
+        }, texture::CompressedImageFormats, view::NoFrustumCulling
+    }, window::PrimaryWindow
 };
 
 #[derive(Component, Debug)]
@@ -29,7 +24,6 @@ pub struct PlayerController {
 pub struct GunController {
     pub magazine_size: usize,
     pub shoot: bool,
-    pub current_camera_transform: GlobalTransform,
 }
 
 #[derive(Component, Resource)]
@@ -90,7 +84,8 @@ pub fn setup(
     .insert(MapController { is_rotated: false, scene_handle: map.clone() } );
 
     let spawn_point = Vec3::new(-8.0, -1.0, 16.5); // CT-Spawn (-8.0, -1.0, 16.5)
-    
+    let primary_gun = asset_server.load("ak-47.glb#Scene0");
+
     // player
     commands.spawn((
         PlayerController { ..Default::default() },
@@ -101,20 +96,38 @@ pub fn setup(
         Collider::capsule(Vec3::ZERO, Vec3::new(0.0, 0.450, 0.0), 0.1),
         LockedAxes::ROTATION_LOCKED,
         //ActiveEvents::COLLISION_EVENTS,
-        Ccd { enabled: true }
+        Ccd { enabled: true },
     )).with_children(|parent| {
         parent.spawn((
-            Camera3dBundle { 
+            Camera3dBundle {
                 transform: Transform::from_translation(Vec3::new(0.0, 0.650, 0.0)),
-                projection: Projection::Perspective(PerspectiveProjection { fov: std::f32::consts::FRAC_PI_2 - 0.02, ..Default::default() } ),
-                ..Default::default() },
-                CameraController::default(),
-                Skybox {
-                    image: skybox_handle.clone(),
-                    brightness: 1000.0
-                },
-            ));
-        }).insert(
+                projection: Projection::Perspective(PerspectiveProjection {
+                    fov: std::f32::consts::FRAC_PI_2 - 0.02,
+                    ..Default::default()
+                }),
+                ..Default::default()
+            },
+            CameraController::default(),
+            Skybox {
+                image: skybox_handle.clone(),
+                brightness: 1000.0
+            },
+        ));
+        })
+        //.with_children(|parent| {
+        //    parent.spawn((
+        //        SceneBundle {
+        //            scene: primary_gun,
+        //            transform: Transform::from_translation(Vec3::new(0.0, 1.0, 0.0)),
+        //            ..Default::default()
+        //        },
+        //        GunController {
+        //            shoot: false,
+        //            magazine_size: 25
+        //        }
+        //    ));
+        //})
+        .insert(
             TransformBundle::from(
                 Transform::from_xyz(
                     spawn_point.x,
@@ -123,19 +136,9 @@ pub fn setup(
                 )
             )
         );
+
         
-    // primary gun (ak-47)
-    let primary_gun = asset_server.load("ak-47.glb#Scene0");
-    commands
-        .spawn(SceneBundle {
-            scene: primary_gun,
-            ..Default::default()
-        }).insert(GunController {
-            magazine_size: 25,
-            shoot: false,
-            current_camera_transform: GlobalTransform::from_xyz(0.0, 0.0, 0.0)
-        });
-    
+
     //println!("primary: {}", primary.width());
     let crosshair_handle = asset_server.load("textures/crosshair.png");
 
@@ -154,8 +157,8 @@ pub fn setup(
                     ..default()
                 },
                 style: Style {
-                    top: Val::Px((1080. - 24.0) / 2.0), // fix primary.height()
-                    left: Val::Px((1920. - 24.0) / 2.0), // fix primary.width()
+                    top: Val::Px((1440. - 24.0) / 2.0), // fix primary.height()
+                    left: Val::Px((2560. - 24.0) / 2.0), // fix primary.width()
                     ..Default::default()
                 },
                 ..default()
@@ -171,20 +174,6 @@ pub fn setup(
         is_loaded: false,
         image_handle: skybox_handle
     });
-}
-
-pub fn update(
-    mut camera_query: Query<&mut GlobalTransform, With<Camera3d>>,
-    mut gun_query: Query<(&mut GlobalTransform, &GunController), Without<Camera3d>>
-) {
-    for camera_transform in camera_query.iter_mut() {
-        for (mut gun_transform, _gun_controller) in gun_query.iter_mut() {
-            println!("{:?} - {:?}", camera_transform.translation(), gun_transform.translation());
-            gun_transform.translation().x = camera_transform.translation().x;
-            gun_transform.translation().y = camera_transform.translation().y;
-            gun_transform.translation().z = camera_transform.translation().z;
-        }
-    }
 }
 
 pub fn rotate_map(
