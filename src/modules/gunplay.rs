@@ -1,4 +1,4 @@
-use crate::rendering::entities::GunController;
+use crate::rendering::entities::{EnemyController, GunController};
 use crate::game::CameraController;
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
@@ -12,23 +12,38 @@ pub fn setup(
 pub fn update(
     mut commands: Commands,
     mut gun_query: Query<&GunController>,
-    mut camera_query: Query<&Transform, With<CameraController>>
+    mut camera_query: Query<&GlobalTransform, With<CameraController>>,
+    rapier_context: Res<RapierContext>,
+    mut enemy_query: Query<&mut EnemyController>
 ) {
     for gun_controller in gun_query.iter_mut() {
         for camera_transform in camera_query.iter_mut() {
             if gun_controller.shoot {
-                let camera_rotations = camera_transform.rotation.to_euler(EulerRot::XYZ);
-                println!("{:?}", camera_rotations);
                 let bullet_ray = Ray3d {
-                    origin: camera_transform.translation,
+                    origin: camera_transform.translation(),
                     direction: 
                         Direction3d::new(
                             Vec3::new(
-                                camera_rotations.0,
-                                camera_rotations.1,
-                                camera_rotations.2
-                            )).unwrap()
+                                camera_transform.forward().x,
+                                camera_transform.forward().y,
+                                camera_transform.forward().z
+                            )
+                        ).unwrap()
                 };
+                if let Some((entity, _toi)) = rapier_context.cast_ray(
+                    bullet_ray.origin,
+                    *bullet_ray.direction,
+                    100.0,
+                    true,
+                    QueryFilter::only_dynamic()
+                ) {
+                    println!("{:?}", entity);
+
+                    if let Ok(mut enemy_controller) = enemy_query.get_mut(entity) {
+                        enemy_controller.health -= 1;
+                        println!("{:?}", enemy_controller.health);
+                    }
+                }
             }
         }
     }

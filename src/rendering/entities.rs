@@ -24,6 +24,11 @@ pub struct PlayerController {
     pub is_crouched: bool,
 }
 
+#[derive(Component, Debug)]
+pub struct EnemyController {
+    pub health: i32,
+}
+
 #[derive(Component, Resource)]
 pub struct GunController {
     pub magazine_size: usize,
@@ -89,7 +94,7 @@ pub fn setup(
     .insert(AsyncSceneCollider { ..default() })
     .insert(MapController { is_rotated: false, scene_handle: map.clone() } );
 
-    let spawn_point = Vec3::new(-8.0, -1.0, 16.5); // CT-Spawn (-8.0, -1.0, 16.5)
+    let spawn_point = Vec3::new(-8.0, -1.5, 16.5); // CT-Spawn (-8.0, -1.0, 16.5)
     let view_model = Vec3::new(0.18, -0.15, 0.0);
     let primary_gun = asset_server.load("ak-47.glb#Scene0");
 
@@ -151,6 +156,30 @@ pub fn setup(
                 )
             )
         );
+
+    let enemy = asset_server.load("enemy.glb#Scene0");
+ 
+    commands
+        .spawn((
+            SceneBundle {
+                scene: enemy,
+                transform: Transform::from_translation(
+                    Vec3::new(
+                        spawn_point.x,
+                        spawn_point.y,
+                        spawn_point.z - 2.0
+                    )
+                ),
+                ..Default::default()
+            },
+            AsyncSceneCollider { ..Default::default() },
+            RigidBody::Dynamic,
+            Sleeping::disabled(),
+            LockedAxes::ROTATION_LOCKED,
+            EnemyController {
+                health: 100
+            },
+        ));
 
     //println!("primary: {}", primary.width());
     let crosshair_handle = asset_server.load("textures/crosshair.png");
