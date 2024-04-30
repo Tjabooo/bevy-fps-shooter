@@ -1,5 +1,9 @@
 use crate::game::CameraController;
 use bevy_rapier3d::prelude::*;
+use bevy_scene_hook::{
+    HookedSceneBundle,
+    SceneHook
+};
 use bevy::{
     asset::LoadState, core_pipeline::Skybox, prelude::*, render::{
         render_resource::{
@@ -20,10 +24,12 @@ pub struct PlayerController {
     pub is_crouched: bool,
 }
 
-#[derive(Component)]
+#[derive(Component, Resource)]
 pub struct GunController {
     pub magazine_size: usize,
     pub shoot: bool,
+    pub is_rotated: bool,
+    pub model_handle: Handle<Scene>
 }
 
 #[derive(Component, Resource)]
@@ -84,6 +90,7 @@ pub fn setup(
     .insert(MapController { is_rotated: false, scene_handle: map.clone() } );
 
     let spawn_point = Vec3::new(-8.0, -1.0, 16.5); // CT-Spawn (-8.0, -1.0, 16.5)
+    let view_model = Vec3::new(0.18, -0.15, 0.0);
     let primary_gun = asset_server.load("ak-47.glb#Scene0");
 
     // player
@@ -102,7 +109,7 @@ pub fn setup(
             Camera3dBundle {
                 transform: Transform::from_translation(Vec3::new(0.0, 0.650, 0.0)),
                 projection: Projection::Perspective(PerspectiveProjection {
-                    fov: std::f32::consts::FRAC_PI_2 - 0.02,
+                    fov: std::f32::consts::FRAC_PI_2 - 0.1,
                     ..Default::default()
                 }),
                 ..Default::default()
@@ -112,21 +119,29 @@ pub fn setup(
                 image: skybox_handle.clone(),
                 brightness: 1000.0
             },
-        ));
+        )).with_children(|parent| {
+            parent.spawn((
+                HookedSceneBundle {
+                    scene: SceneBundle {
+                        scene: primary_gun.clone(),
+                        transform: Transform::from_translation(view_model),
+                        ..Default::default()
+                    },
+                    hook: SceneHook::new(|entity, commands| {
+                        if entity.get::<Handle<Mesh>>().is_some() {
+                            commands.insert(NoFrustumCulling);
+                        }
+                    })
+                },
+                GunController {
+                    shoot: false,
+                    is_rotated: false,
+                    model_handle: primary_gun.clone(),
+                    magazine_size: 25
+                },
+            ));
+        });
         })
-        //.with_children(|parent| {
-        //    parent.spawn((
-        //        SceneBundle {
-        //            scene: primary_gun,
-        //            transform: Transform::from_translation(Vec3::new(0.0, 1.0, 0.0)),
-        //            ..Default::default()
-        //        },
-        //        GunController {
-        //            shoot: false,
-        //            magazine_size: 25
-        //        }
-        //    ));
-        //})
         .insert(
             TransformBundle::from(
                 Transform::from_xyz(
@@ -136,8 +151,6 @@ pub fn setup(
                 )
             )
         );
-
-        
 
     //println!("primary: {}", primary.width());
     let crosshair_handle = asset_server.load("textures/crosshair.png");
@@ -157,8 +170,8 @@ pub fn setup(
                     ..default()
                 },
                 style: Style {
-                    top: Val::Px((1440. - 24.0) / 2.0), // fix primary.height()
-                    left: Val::Px((2560. - 24.0) / 2.0), // fix primary.width()
+                    top: Val::Px((1080. - 24.0) / 2.0), // fix primary.height()
+                    left: Val::Px((1920. - 24.0) / 2.0), // fix primary.width()
                     ..Default::default()
                 },
                 ..default()
@@ -168,6 +181,13 @@ pub fn setup(
     commands.insert_resource(MapController {
         is_rotated: false,
         scene_handle: map
+    });
+
+    commands.insert_resource(GunController {
+        shoot: false,
+        magazine_size: 25,
+        is_rotated: false,
+        model_handle: primary_gun
     });
 
     commands.insert_resource(Cubemap {
@@ -185,6 +205,19 @@ pub fn rotate_map(
         for mut transform in query.iter_mut() {
             transform.rotate(Quat::from_rotation_y(std::f32::consts::PI));
             map_controller.is_rotated = true;
+        }
+    }
+}
+
+pub fn rotate_gun(
+    mut query: Query<&mut Transform, With <GunController>>,
+    mut gun_controller: ResMut<GunController>,
+    asset_server: Res<AssetServer>
+) {
+    if !gun_controller.is_rotated && asset_server.load_state(&gun_controller.model_handle) == LoadState::Loaded {
+        for mut transform in query.iter_mut() {
+            transform.rotate(Quat::from_rotation_y(std::f32::consts::PI));
+            gun_controller.is_rotated = true;
         }
     }
 }

@@ -1,2 +1,4 @@
 pub mod game;
-pub mod movement;
+pub mod controls;
+pub mod animations;
+pub mod gunplay;

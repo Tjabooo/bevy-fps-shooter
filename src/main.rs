@@ -1,6 +1,7 @@
 mod modules;
 mod rendering;
 
+use bevy_scene_hook::HookPlugin;
 use bevy_rapier3d::prelude::*;
 use bevy::{
     prelude::*,
@@ -19,7 +20,9 @@ use bevy::{
 };
 use modules::{
     game, 
-    movement,
+    controls,
+    animations,
+    gunplay
 };
 use rendering::{
     lighting,
@@ -61,15 +64,18 @@ fn main() {
             FrameTimeDiagnosticsPlugin,
             RapierPhysicsPlugin::<NoUserData>::default(),
             //RapierDebugRenderPlugin::default(),
+            HookPlugin
         ))
         .insert_resource(Msaa::Sample8)
         .add_systems(Startup, game::setup)
         .add_systems(Update, game::update)
         .add_systems(Startup, entities::setup)
         .add_systems(Update, entities::rotate_map)
+        .add_systems(Update, entities::rotate_gun)
         .add_systems(Update, entities::load_cubemap)
         .add_systems(Startup, lighting::setup)
-        .add_systems(Update, movement::update)
+        .add_systems(Update, controls::update)
+        .add_systems(Update, gunplay::update)
         .add_systems(Update, game::update)
         .add_systems(Update, game::diagnostics)
         .run();
