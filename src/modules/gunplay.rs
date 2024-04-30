@@ -17,10 +17,10 @@ pub fn update(
     mut enemy_query: Query<&mut EnemyController>,
     rapier_context: Res<RapierContext>,
 ) {
-    if let Ok((player_entity, player_children)) = player_query.single() {
+    if let (player_entity, player_children) = player_query.single() {
         for child in player_children.iter() {
-            if let Ok((camera_transform, camera_children)) = camera_query.get(child) {
-                if let Ok(gun_controller) = gun_query.get(child) {
+            if let Ok((camera_transform, camera_children)) = camera_query.get(*child) {
+                if let Ok(gun_controller) = gun_query.get(*child) {
                     if gun_controller.shoot {
                         let bullet_ray = Ray3d {
                             origin: camera_transform.translation(),
