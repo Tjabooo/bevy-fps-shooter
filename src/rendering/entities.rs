@@ -199,8 +199,8 @@ pub fn setup(
                     ..default()
                 },
                 style: Style {
-                    top: Val::Px((1080. - 24.0) / 2.0), // fix primary.height()
-                    left: Val::Px((1920. - 24.0) / 2.0), // fix primary.width()
+                    top: Val::Px((1440. - 24.0) / 2.0), // fix primary.height()
+                    left: Val::Px((2560. - 24.0) / 2.0), // fix primary.width()
                     ..Default::default()
                 },
                 ..default()

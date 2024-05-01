@@ -2,6 +2,7 @@ mod modules;
 mod rendering;
 
 use bevy_scene_hook::HookPlugin;
+use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_rapier3d::prelude::*;
 use bevy::{
     prelude::*,
@@ -36,17 +37,18 @@ fn main() {
             DefaultPlugins.set(WindowPlugin {
                 primary_window: Some(Window {
                     title: "Valorant".into(),
-                    //resolution: (800., 600.).into(),
-                    mode: WindowMode::BorderlessFullscreen,
-                    resolution: WindowResolution::new(1920., 1080.),
+                    resolution: (800., 600.).into(),
+                    mode: WindowMode::Windowed,
+                    //resolution: WindowResolution::new(1920., 1080.),
                     present_mode: PresentMode::AutoNoVsync,
                     //fit_canvas_to_parent: true,
                     prevent_default_event_handling: false,
                     window_theme: Some(WindowTheme::Dark),
                     cursor: Cursor { 
                         icon: default(),
-                        visible: (false),
-                        grab_mode: (CursorGrabMode::Locked),
+                        visible: (true),
+                        //grab_mode: (CursorGrabMode::Locked),
+                        grab_mode: (CursorGrabMode::None),
                         hit_test: (true)
                     },
                     enabled_buttons: bevy::window::EnabledButtons {
@@ -64,7 +66,8 @@ fn main() {
             FrameTimeDiagnosticsPlugin,
             RapierPhysicsPlugin::<NoUserData>::default(),
             //RapierDebugRenderPlugin::default(),
-            HookPlugin
+            HookPlugin,
+            WorldInspectorPlugin::new()
         ))
         .insert_resource(Msaa::Sample8)
         .add_systems(Startup, game::setup)

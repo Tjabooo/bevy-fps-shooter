@@ -17,9 +17,10 @@ pub fn update(
     mut enemy_query: Query<&mut EnemyController>,
     rapier_context: Res<RapierContext>,
 ) {
-    if let (player_entity, player_children) = player_query.single() {
-        for child in player_children.iter() {
-            if let Ok((camera_transform, camera_children)) = camera_query.get(*child) {
+    let (player_entity, player_children) = player_query.single();
+    for child in player_children.iter() {
+        if let Ok((camera_transform, camera_children)) = camera_query.get(*child) {
+            for child in camera_children.iter() {
                 if let Ok(gun_controller) = gun_query.get(*child) {
                     if gun_controller.shoot {
                         let bullet_ray = Ray3d {
@@ -31,14 +32,13 @@ pub fn update(
                             ))
                             .unwrap(),
                         };
-
+                        
                         let filter = QueryFilter {
                             flags: QueryFilterFlags::EXCLUDE_SENSORS | QueryFilterFlags::ONLY_DYNAMIC,
                             exclude_collider: Some(player_entity),
                             groups: None,
                             ..Default::default()
                         };
-
                         if let Some((entity, _toi)) = rapier_context.cast_ray(
                             bullet_ray.origin,
                             *bullet_ray.direction,
@@ -46,10 +46,11 @@ pub fn update(
                             true,
                             filter,
                         ) {
-                            println!("{:?}", entity);
-        
+                            println!("Entity - {:?}", entity);
+                            println!("Enemy entity - {:?}", enemy_query.get_mut(entity));
                             if let Ok(mut enemy_controller) = enemy_query.get_mut(entity) {
                                 enemy_controller.health -= 1;
+                                println!("{:?}", enemy_controller.health);
                             }
                         }
                     }

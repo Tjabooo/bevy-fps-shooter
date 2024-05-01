@@ -10,6 +10,7 @@ bevy = { version = "0.13.2", features = ["wayland"] }
 bevy_rapier3d = { version = "0.25.0", features = [ "simd-stable", "debug-render-3d" ] }
 bevy-scene-hook = "10.0.0"
 glam = "0.27.0"
+bevy-inspector-egui = "0.24.0"
 
 [profile.release]
 codegen-units = 1
