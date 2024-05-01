@@ -22,8 +22,9 @@ use bevy::{
 use modules::{
     game, 
     controls,
-    animations,
-    gunplay
+    audio,
+    gunplay,
+    structs
 };
 use rendering::{
     lighting,
@@ -79,6 +80,8 @@ fn main() {
         .add_systems(Startup, lighting::setup)
         .add_systems(Update, controls::update)
         .add_systems(Update, gunplay::update)
+        .add_systems(Update, audio::audio_queues)
+        .add_systems(Update, audio::audio_control)
         .add_systems(Update, game::update)
         .add_systems(Update, game::diagnostics)
         .run();

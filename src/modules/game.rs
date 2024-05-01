@@ -1,4 +1,8 @@
-use crate::entities::PlayerController;
+use crate::structs::{
+    PlayerController,
+    CameraController,
+    FpsText
+};
 use bevy::{
     app::AppExit,
     prelude::*,
@@ -8,29 +12,6 @@ use bevy::{
         FrameTimeDiagnosticsPlugin
     }, 
 };
-
-#[derive(Component, Debug)]
-pub struct CameraController {
-    pub pitch: f32,
-    pub yaw: f32,
-    pub sensitivity: f32,
-}
-
-impl Default for CameraController {
-    fn default() -> Self {
-        Self {
-            pitch: 0.0,
-            yaw: 0.0,
-            sensitivity: 0.00025,
-        }
-    }
-}
-
-#[derive(Component)]
-pub struct FpsText;
-
-#[derive(Component)]
-struct ColorText;
 
 pub fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn((

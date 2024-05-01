@@ -1,5 +1,9 @@
-use crate::rendering::entities::{EnemyController, GunController, PlayerController};
-use crate::game::CameraController;
+use crate::structs::{
+    EnemyController,
+    GunController,
+    PlayerController,
+    CameraController
+};
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
 
@@ -7,7 +11,7 @@ pub fn update(
     mut commands: Commands,
     mut player_query: Query<(Entity, &Children), With<PlayerController>>,
     mut camera_query: Query<(&GlobalTransform, &Children), (With<CameraController>, Without<PlayerController>)>,
-    mut gun_query: Query<&GunController>,
+    mut gun_query: Query<&mut GunController>,
     mut enemy_query: Query<&mut EnemyController>,
     rapier_context: Res<RapierContext>,
 ) {
@@ -15,8 +19,10 @@ pub fn update(
     for child in player_children.iter() {
         if let Ok((camera_transform, camera_children)) = camera_query.get(*child) {
             for child in camera_children.iter() {
-                if let Ok(gun_controller) = gun_query.get(*child) {
-                    if gun_controller.shoot {
+                if let Ok(mut gun_controller) = gun_query.get_mut(*child) {
+                    if gun_controller.shooting && (gun_controller.just_pressed || gun_controller.bullet_delay.finished()) {
+                        gun_controller.bullet_delay.reset();
+                        gun_controller.just_pressed = false;
                         let bullet_ray = Ray3d {
                             origin: camera_transform.translation(),
                             direction: Direction3d::new(Vec3::new(
@@ -28,7 +34,7 @@ pub fn update(
                         };
                         
                         let filter = QueryFilter {
-                            flags: QueryFilterFlags::EXCLUDE_SENSORS | QueryFilterFlags::ONLY_DYNAMIC,
+                            flags: QueryFilterFlags::EXCLUDE_SENSORS | QueryFilterFlags::ONLY_FIXED,
                             exclude_collider: Some(player_entity),
                             groups: None,
                             ..Default::default()
@@ -40,15 +46,15 @@ pub fn update(
                             true,
                             filter,
                         ) {
-                            println!("Entity - {:?}", entity);
-                            println!("Enemy entity - {:?}", enemy_query.get_mut(entity));
+                            //println!("Entity - {:?}", entity);
+                            //println!("Enemy entity - {:?}", enemy_query.get_mut(entity));
                             if let Ok(mut enemy_controller) = enemy_query.get_mut(entity) {
                                 if enemy_controller.health <= 0 {
                                     commands.entity(entity).despawn();
                                 } else {
                                     enemy_controller.health -= 1;
                                 }
-                                println!("{:?}", enemy_controller.health);
+                                //println!("{:?}", enemy_controller.health);
                             }
                         }
                     }

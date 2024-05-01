@@ -1,67 +1,30 @@
-use crate::game::CameraController;
+use crate::structs::{
+    CameraController,
+    PlayerController,
+    EnemyController,
+    GunController,
+    MapController,
+    CubemapController
+};
 use bevy_rapier3d::prelude::*;
 use bevy_scene_hook::{
     HookedSceneBundle,
     SceneHook
 };
 use bevy::{
-    asset::LoadState, core_pipeline::Skybox, prelude::*, render::{
+    prelude::*,
+    asset::LoadState,
+    core_pipeline::Skybox,
+    window::PrimaryWindow,
+    render::{
+        view::NoFrustumCulling,
+        texture::CompressedImageFormats,
         render_resource::{
             TextureViewDescriptor,
             TextureViewDimension
-        }, texture::CompressedImageFormats, view::NoFrustumCulling
-    }, window::PrimaryWindow
+        },
+    }, 
 };
-
-#[derive(Component, Debug)]
-pub struct PlayerController {
-    pub velocity: Vec3,
-    pub speed: f32,
-    pub jump_height: f32,
-    pub air_modifier: f32,
-    pub crouch_modifier: f32,
-    pub is_grounded: bool,
-    pub is_crouched: bool,
-}
-
-#[derive(Component, Debug)]
-pub struct EnemyController {
-    pub health: i32,
-}
-
-#[derive(Component, Resource)]
-pub struct GunController {
-    pub magazine_size: usize,
-    pub shoot: bool,
-    pub is_rotated: bool,
-    pub model_handle: Handle<Scene>
-}
-
-#[derive(Component, Resource)]
-pub struct MapController {
-    is_rotated: bool,
-    scene_handle: Handle<Scene>
-}
-
-#[derive(Resource)]
-pub struct Cubemap {
-    is_loaded: bool,
-    image_handle: Handle<Image>
-}
-
-impl Default for PlayerController {
-    fn default() -> Self {
-        Self {
-            speed: 3.2,
-            jump_height: 0.03,
-            air_modifier: 1.0,
-            crouch_modifier: 1.0,
-            velocity: Vec3::ZERO,
-            is_grounded: true,
-            is_crouched: false,
-        }
-    }
-}
 
 pub fn setup(
     mut commands: Commands,
@@ -88,7 +51,7 @@ pub fn setup(
     let map = asset_server.load("de_dust2.glb#Scene0");
     commands.spawn(SceneBundle {
         scene: map.clone(),
-        transform: Transform::from_xyz(0.0, 0.0, 0.0), // rungholt.glb & dm_lowpoly.gltf
+        transform: Transform::from_xyz(0.0, 0.0, 0.0),
         //visibility: Visibility::Hidden,
         ..Default::default()
     })
@@ -97,8 +60,8 @@ pub fn setup(
     .insert(MapController { is_rotated: false, scene_handle: map.clone() } );
 
     let spawn_point = Vec3::new(-8.0, -1.5, 16.5); // CT-Spawn (-8.0, -1.0, 16.5)
-    let view_model = Vec3::new(0.18, -0.15, 0.0);
-    let primary_gun = asset_server.load("ak-47.glb#Scene0");
+    let view_model = Vec3::new(0.10, -0.22, 0.35);
+    let gun_handle = asset_server.load("cs1.6_ak-47.glb#Scene0");
 
     // player
     commands.spawn((
@@ -111,7 +74,12 @@ pub fn setup(
         LockedAxes::ROTATION_LOCKED,
         //ActiveEvents::COLLISION_EVENTS,
         Ccd { enabled: true },
-    )).with_children(|parent| {
+        VisibilityBundle {
+            inherited_visibility: InheritedVisibility::VISIBLE,
+            ..Default::default()
+        }
+    ))
+    .with_children(|parent| {
         parent.spawn((
             Camera3dBundle {
                 transform: Transform::from_translation(Vec3::new(0.0, 0.650, 0.0)),
@@ -126,11 +94,15 @@ pub fn setup(
                 image: skybox_handle.clone(),
                 brightness: 1000.0
             },
+            VisibilityBundle {
+                inherited_visibility: InheritedVisibility::VISIBLE,
+                ..Default::default()
+            }
         )).with_children(|parent| {
             parent.spawn((
                 HookedSceneBundle {
                     scene: SceneBundle {
-                        scene: primary_gun.clone(),
+                        scene: gun_handle.clone(),
                         transform: Transform::from_translation(view_model),
                         ..Default::default()
                     },
@@ -141,10 +113,11 @@ pub fn setup(
                     })
                 },
                 GunController {
-                    shoot: false,
+                    shooting: false,
+                    bullet_delay: Timer::from_seconds(0.1, TimerMode::Repeating),
+                    just_pressed: false,
                     is_rotated: false,
-                    model_handle: primary_gun.clone(),
-                    magazine_size: 25
+                    model_handle: gun_handle.clone(),
                 },
             ));
         });
@@ -179,11 +152,9 @@ pub fn setup(
                 ..Default::default()
             },
             AsyncCollider { ..Default::default() },
-            RigidBody::Dynamic,
-            GravityScale(0.0),
-            Sleeping::disabled(),
+            RigidBody::Fixed,
             EnemyController {
-                health: 1
+                health: 10
             }
         ),
     );
@@ -218,26 +189,26 @@ pub fn setup(
 
     // crosshair
     commands
-        .spawn(NodeBundle {
-            style: Style {
-                justify_content: JustifyContent::FlexStart,
-                ..default()
-            },
-            ..default()
-        }).with_children(|parent| {
-            parent.spawn(ImageBundle {
+       .spawn(ImageBundle {
                 image: UiImage {
                     texture: crosshair_handle,
                     ..default()
                 },
                 style: Style {
-                    top: Val::Px((1080. - 24.0) / 2.0), // fix primary.height()
-                    left: Val::Px((1920. - 24.0) / 2.0), // fix primary.width()
-                    ..Default::default()
+                    position_type: PositionType::Absolute,
+                    width: Val::Px(24.0),
+                    height: Val::Px(24.0),
+                    left: Val::Percent(50.0),
+                    bottom: Val::Percent(50.0),
+                    margin: UiRect {
+                        left: Val::Px(-12.0),
+                        bottom: Val::Px(-12.0),
+                        ..default()
+                    },
+                    ..default()
                 },
                 ..default()
             });
-        });
 
     commands.insert_resource(MapController {
         is_rotated: false,
@@ -245,13 +216,14 @@ pub fn setup(
     });
 
     commands.insert_resource(GunController {
-        shoot: false,
-        magazine_size: 25,
+        shooting: false,
+        bullet_delay: Timer::from_seconds(0.1, TimerMode::Repeating),
+        just_pressed: false,
         is_rotated: false,
-        model_handle: primary_gun
+        model_handle: gun_handle
     });
 
-    commands.insert_resource(Cubemap {
+    commands.insert_resource(CubemapController {
         is_loaded: false,
         image_handle: skybox_handle
     });
@@ -286,7 +258,7 @@ pub fn rotate_gun(
 pub fn load_cubemap(
     asset_server: Res<AssetServer>,
     mut images: ResMut<Assets<Image>>,
-    mut cubemap: ResMut<Cubemap>,
+    mut cubemap: ResMut<CubemapController>,
     mut skyboxes: Query<&mut Skybox>
 ) {
     if !cubemap.is_loaded && asset_server.load_state(&cubemap.image_handle) == LoadState::Loaded {

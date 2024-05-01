@@ -1,4 +1,5 @@
 pub mod game;
 pub mod controls;
-pub mod animations;
+pub mod audio;
 pub mod gunplay;
+pub mod structs;

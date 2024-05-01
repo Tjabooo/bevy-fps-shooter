@@ -1,9 +1,13 @@
-use crate::entities::PlayerController;
-use crate::entities::GunController;
 use bevy::prelude::*;
-use bevy_rapier3d::prelude::*;
-use bevy_rapier3d::geometry::Collider;
-use bevy_rapier3d::plugin::RapierContext;
+use bevy_rapier3d::{
+    prelude::*,
+    geometry::Collider,
+    plugin::RapierContext
+};
+use crate::structs::{
+    PlayerController, 
+    GunController
+};
 
 pub fn update(
     key_event: Res<ButtonInput<KeyCode>>,
@@ -25,6 +29,7 @@ pub fn update(
                     let mut speed = player.speed;
                     let mut air_modifier = player.air_modifier;
                     let mut crouch_modifier = player.crouch_modifier;
+                    gun_controller.bullet_delay.tick(time.delta());
                     
                     let grounded_ray = Ray3d {
                         origin: transform.translation,
@@ -95,10 +100,11 @@ pub fn update(
                             player.is_crouched = false; 
                           }
                     }
-                    if mouse_event.pressed(MouseButton::Left) {
-                        gun_controller.shoot = true;
-                    } else {
-                        gun_controller.shoot = false;
+                    if mouse_event.just_pressed(MouseButton::Left) {
+                        gun_controller.shooting = true;
+                        gun_controller.just_pressed = true;
+                    } else if mouse_event.just_released(MouseButton::Left) {
+                        gun_controller.shooting = false;
                     }
                     
                     horizontal_velocity = horizontal_velocity.normalize_or_zero();
