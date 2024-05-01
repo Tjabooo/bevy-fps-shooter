@@ -9,8 +9,8 @@ use bevy_rapier3d::prelude::*;
 
 pub fn update(
     mut commands: Commands,
-    mut player_query: Query<(Entity, &Children), With<PlayerController>>,
-    mut camera_query: Query<(&GlobalTransform, &Children), (With<CameraController>, Without<PlayerController>)>,
+    player_query: Query<(Entity, &Children), With<PlayerController>>,
+    camera_query: Query<(&GlobalTransform, &Children), (With<CameraController>, Without<PlayerController>)>,
     mut gun_query: Query<&mut GunController>,
     mut enemy_query: Query<&mut EnemyController>,
     rapier_context: Res<RapierContext>,

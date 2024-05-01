@@ -5,7 +5,6 @@ pub struct PlayerController {
     pub velocity: Vec3,
     pub speed: f32,
     pub jump_height: f32,
-    pub air_modifier: f32,
     pub crouch_modifier: f32,
     pub is_grounded: bool,
     pub is_crouched: bool,
@@ -42,7 +41,6 @@ impl Default for PlayerController {
         Self {
             speed: 3.2,
             jump_height: 0.03,
-            air_modifier: 1.0,
             crouch_modifier: 1.0,
             velocity: Vec3::ZERO,
             is_grounded: true,

@@ -28,13 +28,12 @@ pub fn setup(mut commands: Commands) {
             color: Color::WHITE,
             illuminance: 1500.0,
             shadows_enabled: false,
-            shadow_depth_bias: 0.1,
-            shadow_normal_bias: 0.1,
+            shadow_depth_bias: 0.0000001,
+            shadow_normal_bias: 3.0
         },
         ..Default::default()
     });
 
-    
     // lamps
     let lamp_positions = [
         Vec3::new(-9.0, -0.4, 17.7),

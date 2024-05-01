@@ -27,7 +27,6 @@ pub fn update(
                     let jump_height = player.jump_height;
                     let friction = 0.9;
                     let mut speed = player.speed;
-                    let mut air_modifier = player.air_modifier;
                     let mut crouch_modifier = player.crouch_modifier;
                     gun_controller.bullet_delay.tick(time.delta());
                     
@@ -51,15 +50,8 @@ pub fn update(
     
                     let mut horizontal_velocity = Vec3::ZERO;
                     
-                    if !player.is_grounded {
-                        air_modifier = 0.6;
-                    } else {
-                        air_modifier = player.air_modifier;
-                    }
                     if player.is_crouched {
                         crouch_modifier = 0.4;
-                    } else {
-                        crouch_modifier = player.crouch_modifier;
                     }
                     if key_event.pressed(KeyCode::KeyW) {
                         horizontal_velocity += forward;
@@ -77,9 +69,7 @@ pub fn update(
                         player.velocity.y = jump_height;
                     }        
                     if key_event.pressed(KeyCode::ShiftLeft) {
-                        speed = player.speed / 1.7;
-                    } else {
-                        speed = player.speed;
+                        speed /= 1.7;
                     }
                     if key_event.pressed(KeyCode::ControlLeft) {
                         camera.translation = Vec3::new(0.0, 0.300, 0.0);

@@ -2,7 +2,6 @@ mod modules;
 mod rendering;
 
 use bevy_scene_hook::HookPlugin;
-use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_rapier3d::prelude::*;
 use bevy::{
     prelude::*,
@@ -14,10 +13,7 @@ use bevy::{
         WindowResolution,
         WindowTheme
     },
-    diagnostic::{
-        FrameTimeDiagnosticsPlugin,
-        LogDiagnosticsPlugin
-    } 
+    diagnostic::FrameTimeDiagnosticsPlugin
 };
 use modules::{
     game, 
