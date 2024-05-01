@@ -115,7 +115,7 @@ pub fn update(
                     
                     transform.translation += player.velocity * speed;
 
-                    println!("{:?}", transform.translation);
+                    //println!("{:?}", transform.translation);
                 }
             }
         }
