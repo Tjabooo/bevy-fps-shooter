@@ -114,6 +114,8 @@ pub fn update(
                     player.velocity.z = horizontal_velocity.z * friction * crouch_modifier * delta_time;
                     
                     transform.translation += player.velocity * speed;
+
+                    println!("{:?}", transform.translation);
                 }
             }
         }

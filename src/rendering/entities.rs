@@ -15,7 +15,6 @@ use bevy::{
     prelude::*,
     asset::LoadState,
     core_pipeline::Skybox,
-    window::PrimaryWindow,
     render::{
         view::NoFrustumCulling,
         texture::CompressedImageFormats,
@@ -29,15 +28,9 @@ use bevy::{
 pub fn setup(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    primary_query: Query<&Window, With<PrimaryWindow>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    mut meshes: ResMut<Assets<Mesh>>
+    mut meshes: ResMut<Assets<Mesh>>,
 ) {
-    let Ok(primary) = primary_query.get_single() else
-    {
-        return;
-    };
-
     //skybox
     const CUBEMAP: &[(&str, CompressedImageFormats)] = &[
         (
@@ -74,10 +67,7 @@ pub fn setup(
         LockedAxes::ROTATION_LOCKED,
         //ActiveEvents::COLLISION_EVENTS,
         Ccd { enabled: true },
-        VisibilityBundle {
-            inherited_visibility: InheritedVisibility::VISIBLE,
-            ..Default::default()
-        }
+        VisibilityBundle::default()
     ))
     .with_children(|parent| {
         parent.spawn((
@@ -85,6 +75,7 @@ pub fn setup(
                 transform: Transform::from_translation(Vec3::new(0.0, 0.650, 0.0)),
                 projection: Projection::Perspective(PerspectiveProjection {
                     fov: std::f32::consts::FRAC_PI_2 - 0.1,
+                    near: 0.01,
                     ..Default::default()
                 }),
                 ..Default::default()
@@ -94,10 +85,7 @@ pub fn setup(
                 image: skybox_handle.clone(),
                 brightness: 1000.0
             },
-            VisibilityBundle {
-                inherited_visibility: InheritedVisibility::VISIBLE,
-                ..Default::default()
-            }
+            VisibilityBundle::default()
         )).with_children(|parent| {
             parent.spawn((
                 HookedSceneBundle {

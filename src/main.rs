@@ -68,7 +68,7 @@ fn main() {
             RapierPhysicsPlugin::<NoUserData>::default(),
             //RapierDebugRenderPlugin::default(),
             HookPlugin,
-            //WorldInspectorPlugin::new()
+            //WorldInspectorPlugin::new(),
         ))
         .insert_resource(Msaa::Sample8)
         .add_systems(Startup, game::setup)

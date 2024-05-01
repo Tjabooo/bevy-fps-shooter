@@ -1,7 +1,6 @@
 use bevy::prelude::*;
 use bevy::audio::prelude::AudioSink;
 use crate::structs::{
-    PlayerController,
     GunController,
     Ambience
 };
@@ -25,8 +24,8 @@ pub fn audio_queues(
             ).insert(Ambience);
         }
         
-        // bullet fire
         if gun_controller.shooting && (gun_controller.just_pressed || gun_controller.bullet_delay.finished()) {
+            // bullet fire
             commands.spawn(
                 AudioBundle {
                     source: bullet_sound.clone(),
@@ -41,6 +40,6 @@ pub fn audio_control(
     ambience_query: Query<&AudioSink, With<Ambience>>,
 ) {
     if let Ok(ambience_sink) = ambience_query.get_single() {
-        ambience_sink.set_volume(0.5);
+        ambience_sink.set_volume(0.3);
     }
 }
