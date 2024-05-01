@@ -66,7 +66,9 @@ impl Default for PlayerController {
 pub fn setup(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    primary_query: Query<&Window, With<PrimaryWindow>>
+    primary_query: Query<&Window, With<PrimaryWindow>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    mut meshes: ResMut<Assets<Mesh>>
 ) {
     let Ok(primary) = primary_query.get_single() else
     {
@@ -157,29 +159,59 @@ pub fn setup(
             )
         );
 
-    let enemy = asset_server.load("enemy.glb#Scene0");
- 
+    let texture_handle = asset_server.load("textures/default_texture.png");
+    //let material = materials.add(texture_handle.into());
+    let material = materials.add(StandardMaterial { base_color_texture: Some(texture_handle.clone()), ..Default::default() }); 
+    let mesh = meshes.add(Sphere { radius: 0.2, ..Default::default() });
+
     commands
         .spawn((
-            SceneBundle {
-                scene: enemy,
+            PbrBundle {
+                mesh: mesh,
+                material: material,
                 transform: Transform::from_translation(
                     Vec3::new(
                         spawn_point.x,
-                        spawn_point.y,
+                        spawn_point.y + 0.5,
                         spawn_point.z - 2.0
                     )
                 ),
                 ..Default::default()
             },
-            AsyncSceneCollider { ..Default::default() },
+            AsyncCollider { ..Default::default() },
             RigidBody::Dynamic,
+            GravityScale(0.0),
             Sleeping::disabled(),
-            LockedAxes::ROTATION_LOCKED,
             EnemyController {
-                health: 100
-            },
-        ));
+                health: 1
+            }
+        ),
+    );
+
+    // headcrab zombie enemy model
+    //let enemy = asset_server.load("enemy.glb#Scene0");
+    //
+    //commands
+    //    .spawn((
+    //        SceneBundle {
+    //            scene: enemy,
+    //            transform: Transform::from_translation(
+    //                Vec3::new(
+    //                    spawn_point.x,
+    //                    spawn_point.y,
+    //                    spawn_point.z - 2.0
+    //                )
+    //            ),
+    //            ..Default::default()
+    //        },
+    //        AsyncSceneCollider { ..Default::default() },
+    //        RigidBody::Dynamic,
+    //        Sleeping::disabled(),
+    //        LockedAxes::ROTATION_LOCKED,
+    //        EnemyController {
+    //            health: 100
+    //        },
+    //    ));
 
     //println!("primary: {}", primary.width());
     let crosshair_handle = asset_server.load("textures/crosshair.png");
@@ -199,8 +231,8 @@ pub fn setup(
                     ..default()
                 },
                 style: Style {
-                    top: Val::Px((1440. - 24.0) / 2.0), // fix primary.height()
-                    left: Val::Px((2560. - 24.0) / 2.0), // fix primary.width()
+                    top: Val::Px((1080. - 24.0) / 2.0), // fix primary.height()
+                    left: Val::Px((1920. - 24.0) / 2.0), // fix primary.width()
                     ..Default::default()
                 },
                 ..default()

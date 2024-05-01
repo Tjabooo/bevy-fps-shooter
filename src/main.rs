@@ -30,25 +30,25 @@ use rendering::{
     entities
 };
 
-
 fn main() {
     App::new()
         .add_plugins((
             DefaultPlugins.set(WindowPlugin {
                 primary_window: Some(Window {
                     title: "Valorant".into(),
-                    resolution: (800., 600.).into(),
-                    mode: WindowMode::Windowed,
-                    //resolution: WindowResolution::new(1920., 1080.),
+                    //resolution: (800., 600.).into(),
+                    mode: WindowMode::BorderlessFullscreen,
+                    resolution: WindowResolution::new(1920., 1080.),
                     present_mode: PresentMode::AutoNoVsync,
                     //fit_canvas_to_parent: true,
                     prevent_default_event_handling: false,
                     window_theme: Some(WindowTheme::Dark),
                     cursor: Cursor { 
                         icon: default(),
-                        visible: (true),
-                        //grab_mode: (CursorGrabMode::Locked),
-                        grab_mode: (CursorGrabMode::None),
+                        visible: (false),
+                        grab_mode: (CursorGrabMode::Locked),
+                        //visible: (true),
+                        //grab_mode: (CursorGrabMode::None),
                         hit_test: (true)
                     },
                     enabled_buttons: bevy::window::EnabledButtons {
@@ -62,12 +62,12 @@ fn main() {
                 close_when_requested: true,
                 ..default()
             }),
-            LogDiagnosticsPlugin::default(),
+            //LogDiagnosticsPlugin::default(),
             FrameTimeDiagnosticsPlugin,
             RapierPhysicsPlugin::<NoUserData>::default(),
             //RapierDebugRenderPlugin::default(),
             HookPlugin,
-            WorldInspectorPlugin::new()
+            //WorldInspectorPlugin::new()
         ))
         .insert_resource(Msaa::Sample8)
         .add_systems(Startup, game::setup)
