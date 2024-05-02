@@ -40,7 +40,7 @@ impl Default for PlayerController {
     fn default() -> Self {
         Self {
             speed: 3.2,
-            jump_height: 0.03,
+            jump_height: 0.11,
             crouch_modifier: 1.0,
             velocity: Vec3::ZERO,
             is_grounded: true,
@@ -71,3 +71,9 @@ pub struct FpsText;
 
 #[derive(Component)]
 pub struct Ambience;
+
+#[derive(Resource)]
+pub struct AudioController {
+    pub ambience_handle: Handle<AudioSource>,
+    pub gunshot_handle: Handle<AudioSource>
+}

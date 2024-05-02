@@ -46,16 +46,15 @@ pub fn update(
                             true,
                             filter,
                         ) {
-                            //println!("Entity - {:?}", entity);
-                            //println!("Enemy entity - {:?}", enemy_query.get_mut(entity));
                             if let Ok(mut enemy_controller) = enemy_query.get_mut(entity) {
+                                enemy_controller.health -= 1;
                                 if enemy_controller.health <= 0 {
                                     commands.entity(entity).despawn();
-                                } else {
-                                    enemy_controller.health -= 1;
                                 }
                                 //println!("{:?}", enemy_controller.health);
                             }
+                            //println!("Entity - {:?}", entity);
+                            //println!("Enemy entity - {:?}", enemy_query.get_mut(entity));
                         }
                     }
                 }

@@ -1,3 +1,4 @@
+use crate::GameState;
 use crate::structs::{
     PlayerController,
     CameraController,
@@ -81,4 +82,8 @@ pub fn diagnostics(
             }
         }
     }
+}
+
+pub fn in_main_menu(game_state: Res<State<GameState>>) -> bool {
+    game_state.get() == &GameState::Playing
 }

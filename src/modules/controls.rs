@@ -99,11 +99,11 @@ pub fn update(
                     
                     horizontal_velocity = horizontal_velocity.normalize_or_zero();
                     
-                    player.velocity.x = horizontal_velocity.x * friction * crouch_modifier * delta_time;
+                    player.velocity.x = horizontal_velocity.x * speed * friction * crouch_modifier * delta_time;
                     player.velocity.y *= friction;
-                    player.velocity.z = horizontal_velocity.z * friction * crouch_modifier * delta_time;
+                    player.velocity.z = horizontal_velocity.z * speed * friction * crouch_modifier * delta_time;
                     
-                    transform.translation += player.velocity * speed;
+                    transform.translation += player.velocity;
 
                     //println!("{:?}", transform.translation);
                 }

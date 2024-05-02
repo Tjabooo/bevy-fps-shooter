@@ -1,11 +1,12 @@
 use crate::structs::{
     CameraController,
-    PlayerController,
+    CubemapController,
     EnemyController,
     GunController,
     MapController,
-    CubemapController
+    PlayerController
 };
+use crate::GameState;
 use bevy_rapier3d::prelude::*;
 use bevy_scene_hook::{
     HookedSceneBundle,
@@ -16,20 +17,18 @@ use bevy::{
     asset::LoadState,
     core_pipeline::Skybox,
     render::{
-        view::NoFrustumCulling,
         texture::CompressedImageFormats,
+        view::NoFrustumCulling,
         render_resource::{
             TextureViewDescriptor,
             TextureViewDimension
         },
-    }, 
+    } 
 };
 
 pub fn setup(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-    mut meshes: ResMut<Assets<Mesh>>,
 ) {
     //skybox
     const CUBEMAP: &[(&str, CompressedImageFormats)] = &[
@@ -52,7 +51,7 @@ pub fn setup(
     .insert(AsyncSceneCollider { ..default() })
     .insert(MapController { is_rotated: false, scene_handle: map.clone() } );
 
-    let spawn_point = Vec3::new(-8.0, -1.5, 16.5); // CT-Spawn (-8.0, -1.0, 16.5)
+    let spawn_point = Vec3::new(-8.0, -1.0, 16.5); // CT-Spawn (-8.0, -1.0, 16.5)
     let view_model = Vec3::new(0.10, -0.22, 0.35);
     let gun_handle = asset_server.load("cs1.6_ak-47.glb#Scene0");
 
@@ -120,58 +119,6 @@ pub fn setup(
             )
         );
 
-    let texture_handle = asset_server.load("textures/default_texture.png");
-    //let material = materials.add(texture_handle.into());
-    let material = materials.add(StandardMaterial { base_color_texture: Some(texture_handle.clone()), ..Default::default() }); 
-    let mesh = meshes.add(Sphere { radius: 0.2, ..Default::default() });
-
-    commands
-        .spawn((
-            PbrBundle {
-                mesh: mesh,
-                material: material,
-                transform: Transform::from_translation(
-                    Vec3::new(
-                        spawn_point.x,
-                        spawn_point.y + 0.5,
-                        spawn_point.z - 2.0
-                    )
-                ),
-                ..Default::default()
-            },
-            AsyncCollider { ..Default::default() },
-            RigidBody::Fixed,
-            EnemyController {
-                health: 10
-            }
-        ),
-    );
-
-    // headcrab zombie enemy model
-    //let enemy = asset_server.load("enemy.glb#Scene0");
-    //
-    //commands
-    //    .spawn((
-    //        SceneBundle {
-    //            scene: enemy,
-    //            transform: Transform::from_translation(
-    //                Vec3::new(
-    //                    spawn_point.x,
-    //                    spawn_point.y,
-    //                    spawn_point.z - 2.0
-    //                )
-    //            ),
-    //            ..Default::default()
-    //        },
-    //        AsyncSceneCollider { ..Default::default() },
-    //        RigidBody::Dynamic,
-    //        Sleeping::disabled(),
-    //        LockedAxes::ROTATION_LOCKED,
-    //        EnemyController {
-    //            health: 100
-    //        },
-    //    ));
-
     //println!("primary: {}", primary.width());
     let crosshair_handle = asset_server.load("textures/crosshair.png");
 
@@ -217,15 +164,58 @@ pub fn setup(
     });
 }
 
+pub fn spawn_enemies(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    mut meshes: ResMut<Assets<Mesh>>
+) {
+    let texture_handle = asset_server.load("textures/default_texture.png");
+    let material = materials.add(StandardMaterial { base_color_texture: Some(texture_handle.clone()), ..Default::default() }); 
+    let mesh = meshes.add(Sphere { radius: 0.1 });
+
+    let level_1_positions = [
+        Vec3::new(-18.23, 2.25, 16.47),
+        Vec3::new(-19.78, 2.72, 24.65),
+        Vec3::new(-28.2, 1.85, 9.7),
+        Vec3::new(-28.17, 1.93, -3.75),
+        Vec3::new(-13.42, 1.115, -0.3),
+        Vec3::new(-13.9, 1.114, -10.5),
+        Vec3::new(-8.0, 1.23, -9.55),
+        Vec3::new(-2.69, 1.015, -6.33),
+        Vec3::new(1.69, -0.72, 4.9),
+        Vec3::new(-0.84, -0.69, 9.2)
+    ];
+
+    for enemy_position in level_1_positions.iter() {
+        commands
+            .spawn((
+                PbrBundle {
+                    mesh: mesh.clone(),
+                    material: material.clone(),
+                    transform: Transform::from_translation(*enemy_position),
+                    ..Default::default()
+                },
+                AsyncCollider { ..Default::default() },
+                RigidBody::Fixed,
+                EnemyController {
+                    health: 1
+                }
+            ));
+    }
+}
+
 pub fn rotate_map(
     mut query: Query<&mut Transform, With<MapController>>,
     mut map_controller: ResMut<MapController>,
     asset_server: Res<AssetServer>,
+    mut change_state: ResMut<NextState<GameState>>
 ) {
     if !map_controller.is_rotated && asset_server.load_state(&map_controller.scene_handle) == LoadState::Loaded {
         for mut transform in query.iter_mut() {
             transform.rotate(Quat::from_rotation_y(std::f32::consts::PI));
             map_controller.is_rotated = true;
+            change_state.set(GameState::Playing);
         }
     }
 }
