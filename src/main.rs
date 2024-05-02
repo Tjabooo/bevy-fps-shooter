@@ -72,25 +72,25 @@ fn main() {
         HookPlugin,
         //WorldInspectorPlugin::new(),
     ))
-        .insert_state(GameState::Loading)
-        .insert_resource(Msaa::Sample8)
-        .add_systems(Startup, (
-            game::setup,
-            entities::setup,
-            entities::spawn_enemies,
-            lighting::setup,
-            audio::load_audio
-        ))
-        .add_systems(Update, (
-            game::update,
-            game::diagnostics,
-            entities::rotate_map,
-            entities::rotate_gun,
-            entities::load_cubemap,
-            controls::update,
-            gunplay::update,
-            audio::audio_queues,
-            audio::audio_control
-        ))
-        .run_if(game::in_main_menu);
+    .insert_state(GameState::Loading)
+    .insert_resource(Msaa::Sample8)
+    .add_systems(Startup, (
+        game::setup,
+        entities::setup,
+        entities::spawn_enemies,
+        lighting::setup,
+        audio::load_audio
+    ))
+    .add_systems(Update, (
+        game::update,
+        game::diagnostics,
+        entities::rotate_map,
+        entities::rotate_gun,
+        entities::load_cubemap,
+        controls::update,
+        gunplay::update,
+        audio::audio_queues,
+        audio::audio_control
+    ))
+    .run_if(game::in_main_menu);
 }
