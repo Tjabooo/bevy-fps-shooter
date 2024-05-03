@@ -245,7 +245,7 @@ pub fn load_cubemap(
             image.reinterpret_stacked_2d_as_array(image.height() / image.width());
             image.texture_view_descriptor = Some(TextureViewDescriptor {
                 dimension: Some(TextureViewDimension::Cube),
-                ..default()
+                ..Default::default()
             });
         }
 

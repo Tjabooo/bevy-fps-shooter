@@ -77,3 +77,14 @@ pub struct AudioController {
     pub ambience_handle: Handle<AudioSource>,
     pub gunshot_handle: Handle<AudioSource>
 }
+
+#[derive(Component)]
+pub enum MenuButtonAction {
+    Play,
+    Quit
+}
+
+#[derive(Component)]
+pub struct MenuCameraController {
+    camera_entity: Entity
+}

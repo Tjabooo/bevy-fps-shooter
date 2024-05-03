@@ -14,7 +14,11 @@ use bevy::{
     }, 
 };
 
-pub fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
+pub fn setup(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut new_state: ResMut<NextState<GameState>>
+) {
     commands.spawn((
         TextBundle::from_sections([
             TextSection::new(
@@ -40,7 +44,7 @@ pub fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
             }),
         ]),
         FpsText,
-    ));    
+    ));
 }
 
 pub fn update(
@@ -84,6 +88,14 @@ pub fn diagnostics(
     }
 }
 
-pub fn in_main_menu(game_state: Res<State<GameState>>) -> bool {
+pub fn in_main_menu_state(game_state: Res<State<GameState>>) -> bool {
+    game_state.get() == &GameState::MainMenu
+}
+
+pub fn in_splash_state(game_state: Res<State<GameState>>) -> bool {
+    game_state.get() == &GameState::Splash
+}
+
+pub fn in_playing_state(game_state: Res<State<GameState>>) -> bool {
     game_state.get() == &GameState::Playing
 }

@@ -20,17 +20,19 @@ use modules::{
     controls,
     audio,
     gunplay,
-    structs
+    structs,
+    menu
 };
 use rendering::{
     lighting,
     entities
 };
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash, States, Resource)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash, States, Resource, Default)]
 pub enum GameState {
-    Loading,
-    Paused,
+    #[default]
+    Splash,
+    MainMenu,
     Playing,
 }
 
@@ -39,19 +41,18 @@ fn main() {
     .add_plugins((
         DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
-                title: "Valorant".into(),
+                title: "VALORANT 2.0".into(),
                 //resolution: (800., 600.).into(),
                 mode: WindowMode::BorderlessFullscreen,
                 resolution: WindowResolution::new(1920., 1080.),
                 present_mode: PresentMode::AutoNoVsync,
-                prevent_default_event_handling: false,
                 window_theme: Some(WindowTheme::Dark),
                 cursor: Cursor { 
                     icon: default(),
-                    visible: (false),
-                    grab_mode: (CursorGrabMode::Locked),
-                    //visible: (true),
-                    //grab_mode: (CursorGrabMode::None),
+                    //visible: (false),
+                    //grab_mode: (CursorGrabMode::Locked),
+                    visible: (true),
+                    grab_mode: (CursorGrabMode::None),
                     hit_test: (true)
                 },
                 enabled_buttons: bevy::window::EnabledButtons {
@@ -72,7 +73,7 @@ fn main() {
         HookPlugin,
         //WorldInspectorPlugin::new(),
     ))
-    .insert_state(GameState::Loading)
+    .insert_state(GameState::Splash)
     .insert_resource(Msaa::Sample8)
     .add_systems(Startup, (
         game::setup,
@@ -80,17 +81,24 @@ fn main() {
         entities::spawn_enemies,
         lighting::setup,
         audio::load_audio
-    ))
+    ).run_if(game::in_splash_state))
+    // main menu
+    .add_systems(Startup, menu::setup.run_if(game::in_splash_state))
+    .add_systems(Update, menu::menu_interaction.run_if(game::in_splash_state))
+    // in-game
+    //.add_systems(Update, entities::load_cubemap)
     .add_systems(Update, (
         game::update,
         game::diagnostics,
         entities::rotate_map,
         entities::rotate_gun,
         entities::load_cubemap,
-        controls::update,
+        //controls::update,
         gunplay::update,
         audio::audio_queues,
         audio::audio_control
     ))
-    .run_if(game::in_main_menu);
+    //.run_if(game::in_playing_state))
+    .add_systems(Update, controls::update.run_if(game::in_playing_state))
+    .run();
 }
