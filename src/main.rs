@@ -8,6 +8,7 @@ use crate::structs::{
     AudioController,
     CubemapController
 };
+use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_scene_hook::HookPlugin;
 use bevy_rapier3d::prelude::*;
 use bevy::{
@@ -78,7 +79,7 @@ fn main() {
         RapierPhysicsPlugin::<NoUserData>::default(),
         //RapierDebugRenderPlugin::default(),
         HookPlugin,
-        //WorldInspectorPlugin::new(),
+        WorldInspectorPlugin::new(),
     ))
     .insert_state(GameState::MainMenu)
     .insert_resource(Msaa::Sample8)
