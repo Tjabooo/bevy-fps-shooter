@@ -1,6 +1,13 @@
 mod modules;
 mod rendering;
 
+use crate::structs::{
+    PlayerController,
+    MapController,
+    GunController,
+    AudioController,
+    CubemapController
+};
 use bevy_scene_hook::HookPlugin;
 use bevy_rapier3d::prelude::*;
 use bevy::{
@@ -31,8 +38,8 @@ use rendering::{
 #[derive(Debug, Clone, Eq, PartialEq, Hash, States, Resource, Default)]
 pub enum GameState {
     #[default]
-    Splash,
     MainMenu,
+    PauseMenu,
     Playing,
 }
 
@@ -73,32 +80,52 @@ fn main() {
         HookPlugin,
         //WorldInspectorPlugin::new(),
     ))
-    .insert_state(GameState::Splash)
+    .insert_state(GameState::MainMenu)
     .insert_resource(Msaa::Sample8)
-    .add_systems(Startup, (
+    .init_resource::<PlayerController>() 
+    .init_resource::<MapController>()
+    .init_resource::<GunController>()  
+    .init_resource::<AudioController>()
+    .init_resource::<CubemapController>()
+    // main menu
+    .add_systems(OnEnter(GameState::MainMenu), menu::setup_main_menu)
+    .add_systems(Update, menu::menu_interactions.run_if(game::in_main_menu_state))
+    // pause menu
+    .add_systems(OnEnter(GameState::PauseMenu), menu::setup_pause_menu)
+    .add_systems(Update, menu::menu_interactions.run_if(game::in_pause_menu_state))
+    // game
+    .add_systems(OnTransition {
+        from: GameState::MainMenu, 
+        to: GameState::Playing
+    }, (
         game::setup,
         entities::setup,
         entities::spawn_enemies,
         lighting::setup,
         audio::load_audio
-    ).run_if(game::in_splash_state))
-    // main menu
-    .add_systems(Startup, menu::setup.run_if(game::in_splash_state))
-    .add_systems(Update, menu::menu_interaction.run_if(game::in_splash_state))
-    // in-game
-    //.add_systems(Update, entities::load_cubemap)
+    ))
     .add_systems(Update, (
         game::update,
         game::diagnostics,
         entities::rotate_map,
         entities::rotate_gun,
         entities::load_cubemap,
-        //controls::update,
+        controls::update,
         gunplay::update,
-        audio::audio_queues,
+        audio::audio_playback,
         audio::audio_control
-    ))
-    //.run_if(game::in_playing_state))
-    .add_systems(Update, controls::update.run_if(game::in_playing_state))
+    ).run_if(game::in_playing_state))
+    // cleanup systems
+    .add_systems(OnExit(GameState::MainMenu), entities::despawn_menu_entities)
+    .add_systems(OnExit(GameState::PauseMenu), entities::despawn_menu_entities)
+    .add_systems(OnTransition {
+        from: GameState::PauseMenu,
+        to: GameState::MainMenu
+    }, entities::despawn_game_entities)
+    // misc
+    .add_systems(OnTransition {
+        from: GameState::PauseMenu,
+        to: GameState::Playing
+    }, game::change_cursor_state)
     .run();
 }

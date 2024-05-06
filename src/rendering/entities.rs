@@ -4,7 +4,9 @@ use crate::structs::{
     EnemyController,
     GunController,
     MapController,
-    PlayerController
+    PlayerController,
+    MenuEntity,
+    GameEntity
 };
 use crate::GameState;
 use bevy_rapier3d::prelude::*;
@@ -49,7 +51,8 @@ pub fn setup(
     })
     .insert(RigidBody::Fixed)
     .insert(AsyncSceneCollider { ..default() })
-    .insert(MapController { is_rotated: false, scene_handle: map.clone() } );
+    .insert(MapController { is_rotated: false, scene_handle: Some(map.clone()) } )
+    .insert(GameEntity);
 
     let spawn_point = Vec3::new(-8.0, -1.0, 16.5); // CT-Spawn (-8.0, -1.0, 16.5)
     let view_model = Vec3::new(0.10, -0.22, 0.35);
@@ -66,7 +69,8 @@ pub fn setup(
         LockedAxes::ROTATION_LOCKED,
         //ActiveEvents::COLLISION_EVENTS,
         Ccd { enabled: true },
-        VisibilityBundle::default()
+        VisibilityBundle::default(),
+        GameEntity
     ))
     .with_children(|parent| {
         parent.spawn((
@@ -84,7 +88,8 @@ pub fn setup(
                 image: skybox_handle.clone(),
                 brightness: 1000.0
             },
-            VisibilityBundle::default()
+            VisibilityBundle::default(),
+            GameEntity
         )).with_children(|parent| {
             parent.spawn((
                 HookedSceneBundle {
@@ -101,11 +106,12 @@ pub fn setup(
                 },
                 GunController {
                     shooting: false,
-                    bullet_delay: Timer::from_seconds(0.1, TimerMode::Repeating),
+                    bullet_delay: Some(Timer::from_seconds(0.1, TimerMode::Repeating)),
                     just_pressed: false,
                     is_rotated: false,
-                    model_handle: gun_handle.clone(),
+                    model_handle: Some(gun_handle.clone()),
                 },
+                GameEntity
             ));
         });
         })
@@ -143,24 +149,24 @@ pub fn setup(
                     ..default()
                 },
                 ..default()
-            });
+            }).insert(GameEntity);
 
     commands.insert_resource(MapController {
         is_rotated: false,
-        scene_handle: map
+        scene_handle: Some(map)
     });
 
     commands.insert_resource(GunController {
         shooting: false,
-        bullet_delay: Timer::from_seconds(0.1, TimerMode::Repeating),
+        bullet_delay: Some(Timer::from_seconds(0.1, TimerMode::Repeating)),
         just_pressed: false,
         is_rotated: false,
-        model_handle: gun_handle
+        model_handle: Some(gun_handle)
     });
 
     commands.insert_resource(CubemapController {
         is_loaded: false,
-        image_handle: skybox_handle
+        image_handle: Some(skybox_handle)
     });
 }
 
@@ -200,7 +206,8 @@ pub fn spawn_enemies(
                 RigidBody::Fixed,
                 EnemyController {
                     health: 1
-                }
+                },
+                GameEntity
             ));
     }
 }
@@ -211,11 +218,13 @@ pub fn rotate_map(
     asset_server: Res<AssetServer>,
     mut change_state: ResMut<NextState<GameState>>
 ) {
-    if !map_controller.is_rotated && asset_server.load_state(&map_controller.scene_handle) == LoadState::Loaded {
-        for mut transform in query.iter_mut() {
-            transform.rotate(Quat::from_rotation_y(std::f32::consts::PI));
-            map_controller.is_rotated = true;
-            change_state.set(GameState::Playing);
+    if let Some(scene_handle) = &map_controller.scene_handle {
+        if !map_controller.is_rotated && asset_server.load_state(scene_handle) == LoadState::Loaded {
+            for mut transform in query.iter_mut() {
+                transform.rotate(Quat::from_rotation_y(std::f32::consts::PI));
+                map_controller.is_rotated = true;
+                change_state.set(GameState::Playing);
+            }
         }
     }
 }
@@ -225,12 +234,14 @@ pub fn rotate_gun(
     mut gun_controller: ResMut<GunController>,
     asset_server: Res<AssetServer>
 ) {
-    if !gun_controller.is_rotated && asset_server.load_state(&gun_controller.model_handle) == LoadState::Loaded {
-        for mut transform in query.iter_mut() {
-            transform.rotate(Quat::from_rotation_y(std::f32::consts::PI));
-            gun_controller.is_rotated = true;
+    if let Some(model_handle) = &gun_controller.model_handle {
+        if !gun_controller.is_rotated && asset_server.load_state(model_handle) == LoadState::Loaded {
+            for mut transform in query.iter_mut() {
+                transform.rotate(Quat::from_rotation_y(std::f32::consts::PI));
+                gun_controller.is_rotated = true;
+            }
         }
-    }
+    };
 }
 
 pub fn load_cubemap(
@@ -239,20 +250,40 @@ pub fn load_cubemap(
     mut cubemap: ResMut<CubemapController>,
     mut skyboxes: Query<&mut Skybox>
 ) {
-    if !cubemap.is_loaded && asset_server.load_state(&cubemap.image_handle) == LoadState::Loaded {
-        let image = images.get_mut(&cubemap.image_handle).unwrap();
-        if image.texture_descriptor.array_layer_count() == 1 {
-            image.reinterpret_stacked_2d_as_array(image.height() / image.width());
-            image.texture_view_descriptor = Some(TextureViewDescriptor {
-                dimension: Some(TextureViewDimension::Cube),
-                ..Default::default()
-            });
+    if let Some(image_handle) = &cubemap.image_handle {
+        if !cubemap.is_loaded && asset_server.load_state(image_handle) == LoadState::Loaded {
+            let image = images.get_mut(image_handle).unwrap();
+            if image.texture_descriptor.array_layer_count() == 1 {
+                image.reinterpret_stacked_2d_as_array(image.height() / image.width());
+                image.texture_view_descriptor = Some(TextureViewDescriptor {
+                    dimension: Some(TextureViewDimension::Cube),
+                    ..Default::default()
+                });
+            }
+    
+            for mut skybox in &mut skyboxes {
+                skybox.image = image_handle.clone()
+            }
+    
+            cubemap.is_loaded = true;
         }
+    }
+}
 
-        for mut skybox in &mut skyboxes {
-            skybox.image = cubemap.image_handle.clone()
-        }
+pub fn despawn_menu_entities(
+    mut commands: Commands,
+    menu_entity_query: Query<Entity, With<MenuEntity>>
+) {
+    for menu_entity in menu_entity_query.iter() {
+        commands.entity(menu_entity).despawn();
+    }
+}
 
-        cubemap.is_loaded = true;
+pub fn despawn_game_entities(
+    mut commands: Commands,
+    game_entity_query: Query<Entity, With<GameEntity>>
+) {
+    for game_entity in game_entity_query.iter() {
+        commands.entity(game_entity).despawn();
     }
 }

@@ -19,6 +19,7 @@
 */
 
 use bevy::prelude::*;
+use crate::structs::GameEntity;
 
 pub fn setup(mut commands: Commands) {
     // sun
@@ -52,7 +53,7 @@ pub fn setup(mut commands: Commands) {
                 ..Default::default()
             },
             ..Default::default()
-        });
+        }).insert(GameEntity);
     }
 
     commands.insert_resource(AmbientLight {

@@ -1,11 +1,12 @@
 use crate::GameState;
+use bevy::window::CursorGrabMode;
 use crate::structs::{
     PlayerController,
     CameraController,
-    FpsText
+    FpsText,
+    GameEntity
 };
 use bevy::{
-    app::AppExit,
     prelude::*,
     input::mouse::MouseMotion,
     diagnostic::{
@@ -17,8 +18,13 @@ use bevy::{
 pub fn setup(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    mut new_state: ResMut<NextState<GameState>>
+    mut window: Query<&mut Window>
 ) {
+    let mut window = window.get_single_mut().unwrap();
+
+    window.cursor.visible = false;
+    window.cursor.grab_mode = CursorGrabMode::Locked;
+
     commands.spawn((
         TextBundle::from_sections([
             TextSection::new(
@@ -44,20 +50,16 @@ pub fn setup(
             }),
         ]),
         FpsText,
+        GameEntity
     ));
 }
 
 pub fn update(
-    key: ResMut<ButtonInput<KeyCode>>,
-    mut app_exit_event: ResMut<Events<AppExit>>,
     mut player_query: Query<&mut Transform, With<PlayerController>>,
-    mut camera_query: Query<(&mut CameraController, &mut Transform), (With<Camera>, Without<PlayerController>)>,
+    mut camera_query: Query<(&mut CameraController, &mut Transform),
+                            (With<Camera>, Without<PlayerController>)>,
     mut mouse_motion_events: EventReader<MouseMotion>
 ) {
-    if key.just_pressed(KeyCode::Escape) {
-        app_exit_event.send(AppExit);
-    }
-
     for event in mouse_motion_events.read() {
         for (mut camera, mut camera_transform) in camera_query.iter_mut() {
             for mut player_transform in player_query.iter_mut() {
@@ -73,6 +75,15 @@ pub fn update(
             }
         }
     }
+}
+
+pub fn change_cursor_state(
+    mut window: Query<&mut Window>
+) {
+    let mut window = window.get_single_mut().unwrap();
+
+    window.cursor.visible = false;
+    window.cursor.grab_mode = CursorGrabMode::Locked;
 }
 
 pub fn diagnostics(
@@ -92,8 +103,8 @@ pub fn in_main_menu_state(game_state: Res<State<GameState>>) -> bool {
     game_state.get() == &GameState::MainMenu
 }
 
-pub fn in_splash_state(game_state: Res<State<GameState>>) -> bool {
-    game_state.get() == &GameState::Splash
+pub fn in_pause_menu_state(game_state: Res<State<GameState>>) -> bool {
+    game_state.get() == &GameState::PauseMenu
 }
 
 pub fn in_playing_state(game_state: Res<State<GameState>>) -> bool {
