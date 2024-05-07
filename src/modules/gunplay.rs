@@ -1,19 +1,19 @@
+use bevy::prelude::*;
+use bevy_rapier3d::prelude::*;
 use crate::structs::{
-    EnemyController,
+    TargetController,
     GunController,
     PlayerController,
     CameraController
 };
-use bevy::prelude::*;
-use bevy_rapier3d::prelude::*;
 
 pub fn update(
     mut commands: Commands,
     player_query: Query<(Entity, &Children), With<PlayerController>>,
     camera_query: Query<(&GlobalTransform, &Children), (With<CameraController>, Without<PlayerController>)>,
     mut gun_query: Query<&mut GunController>,
-    mut enemy_query: Query<&mut EnemyController>,
-    rapier_context: Res<RapierContext>,
+    mut enemy_query: Query<&mut TargetController>,
+    rapier_context: Res<RapierContext>
 ) {
     if let Ok((player_entity, player_children)) = player_query.get_single() {
         for child in player_children.iter() {

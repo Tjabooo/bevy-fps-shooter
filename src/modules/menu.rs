@@ -131,7 +131,7 @@ pub fn setup_pause_menu(
     let mut window = window.get_single_mut().unwrap();
 
     window.cursor.visible = true;
-    window.cursor.grab_mode = CursorGrabMode::Confined;
+    window.cursor.grab_mode = CursorGrabMode::None;
 
     let button_style: Style = Style {
         width: Val::Px(250.0),

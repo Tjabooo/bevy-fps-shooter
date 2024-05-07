@@ -6,12 +6,16 @@ use crate::structs::{
     MapController,
     GunController,
     AudioController,
-    CubemapController
+    CubemapController,
+    LevelController,
+    EntityHandler,
+    TargetController
 };
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_scene_hook::HookPlugin;
 use bevy_rapier3d::prelude::*;
 use bevy::{
+    diagnostic::FrameTimeDiagnosticsPlugin,
     prelude::*,
     window::{
         Cursor,
@@ -20,8 +24,7 @@ use bevy::{
         WindowMode,
         WindowResolution,
         WindowTheme
-    },
-    diagnostic::FrameTimeDiagnosticsPlugin
+    }
 };
 use modules::{
     game, 
@@ -42,6 +45,13 @@ pub enum GameState {
     MainMenu,
     PauseMenu,
     Playing,
+}
+
+#[derive(Debug, Clone, Eq, PartialEq, Hash, States, Resource, Default)]
+pub enum LevelState {
+    #[default]
+    Level1,
+    Level2
 }
 
 fn main() {
@@ -79,15 +89,19 @@ fn main() {
         RapierPhysicsPlugin::<NoUserData>::default(),
         //RapierDebugRenderPlugin::default(),
         HookPlugin,
-        WorldInspectorPlugin::new(),
+        //WorldInspectorPlugin::new(),
     ))
     .insert_state(GameState::MainMenu)
+    .insert_state(LevelState::Level1)
     .insert_resource(Msaa::Sample8)
     .init_resource::<PlayerController>() 
+    .init_resource::<TargetController>()
     .init_resource::<MapController>()
     .init_resource::<GunController>()  
     .init_resource::<AudioController>()
     .init_resource::<CubemapController>()
+    .init_resource::<LevelController>()
+    .init_resource::<EntityHandler>()
     // main menu
     .add_systems(OnEnter(GameState::MainMenu), menu::setup_main_menu)
     .add_systems(Update, menu::menu_interactions.run_if(game::in_main_menu_state))
@@ -101,10 +115,9 @@ fn main() {
     }, (
         game::setup,
         entities::setup,
-        entities::spawn_enemies,
         lighting::setup,
-        audio::load_audio
     ))
+    .add_systems(OnEnter(LevelState::Level1), game::spawn_targets)
     .add_systems(Update, (
         game::mouse_callback,
         game::diagnostics,
@@ -124,7 +137,7 @@ fn main() {
         to: GameState::MainMenu
     }, entities::despawn_game_entities)
     // misc
-    .add_systems(Startup, entities::load_entities)
+    .add_systems(Startup, (entities::load_entities, audio::load_audio))
     .add_systems(OnTransition {
         from: GameState::PauseMenu,
         to: GameState::Playing

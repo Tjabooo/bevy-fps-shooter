@@ -1,7 +1,7 @@
 use crate::structs::{
     CameraController,
     CubemapController,
-    EnemyController,
+    TargetController,
     GunController,
     MapController,
     PlayerController,
@@ -33,16 +33,16 @@ pub fn load_entities(
     mut commands: Commands,
     asset_server: Res<AssetServer>
 ) {
-    let map_handle: Handle<Scene> = asset_server.load("de_dust2.glb#Scene0");
-    let gun_handle: Handle<Scene> = asset_server.load("cs1.6_ak-47.glb#Scene0");
-    let crosshair_handle: Handle<Image> = asset_server.load("textures/crosshair.png");
-    let target_texture_handle: Handle<Image> = asset_server.load("textures/default_texture.png");
+    let map_handle = asset_server.load("de_dust2.glb#Scene0");
+    let gun_handle = asset_server.load("cs1.6_ak-47.glb#Scene0");
+    let crosshair_handle = asset_server.load("textures/crosshair.png");
+    let target_texture_handle = asset_server.load("textures/default_texture.png");
 
     commands.insert_resource(EntityHandler {
-        map_handle: map_handle,
-        gun_handle: gun_handle,
-        crosshair_handle: crosshair_handle,
-        target_texture_handle: target_texture_handle
+        map_handle: Some(map_handle),
+        gun_handle: Some(gun_handle),
+        crosshair_handle: Some(crosshair_handle),
+        target_texture_handle: Some(target_texture_handle)
     });
 }
 
@@ -62,14 +62,13 @@ pub fn setup(
 
     // map
     commands.spawn(SceneBundle {
-        scene: entity_handler.map_handle.clone(),
+        scene: entity_handler.map_handle.clone().expect(""),
         transform: Transform::from_xyz(0.0, 0.0, 0.0),
-        //visibility: Visibility::Hidden,
         ..Default::default()
     })
     .insert(RigidBody::Fixed)
     .insert(AsyncSceneCollider { ..default() })
-    .insert(MapController { is_rotated: false, scene_handle: Some(entity_handler.map_handle.clone()) } )
+    .insert(MapController { is_rotated: false, scene_handle: entity_handler.map_handle.clone() } )
     .insert(GameEntity);
 
     let spawn_point = Vec3::new(-8.0, -1.0, 16.5); // CT-Spawn (-8.0, -1.0, 16.5)
@@ -81,10 +80,8 @@ pub fn setup(
         RigidBody::Dynamic,
         GravityScale(0.9),
         Sleeping::disabled(),
-        //Collider::cuboid(0.15, 0.500, 0.15),
         Collider::capsule(Vec3::ZERO, Vec3::new(0.0, 0.450, 0.0), 0.1),
         LockedAxes::ROTATION_LOCKED,
-        //ActiveEvents::COLLISION_EVENTS,
         Ccd { enabled: true },
         VisibilityBundle::default(),
         GameEntity
@@ -110,7 +107,7 @@ pub fn setup(
             parent.spawn((
                 HookedSceneBundle {
                     scene: SceneBundle {
-                        scene: entity_handler.gun_handle.clone(),
+                        scene: entity_handler.gun_handle.clone().expect(""),
                         transform: Transform::from_translation(view_model),
                         ..Default::default()
                     },
@@ -125,7 +122,7 @@ pub fn setup(
                     bullet_delay: Some(Timer::from_seconds(0.1, TimerMode::Repeating)),
                     just_pressed: false,
                     is_rotated: false,
-                    model_handle: Some(entity_handler.gun_handle.clone()),
+                    model_handle: entity_handler.gun_handle.clone()
                 },
             ));
         });
@@ -146,7 +143,7 @@ pub fn setup(
     commands
        .spawn(ImageBundle {
                 image: UiImage {
-                    texture: entity_handler.crosshair_handle.clone(),
+                    texture: entity_handler.crosshair_handle.clone().expect(""),
                     ..default()
                 },
                 style: Style {
@@ -167,7 +164,7 @@ pub fn setup(
 
     commands.insert_resource(MapController {
         is_rotated: false,
-        scene_handle: Some(entity_handler.map_handle.clone())
+        scene_handle: entity_handler.map_handle.clone()
     });
 
     commands.insert_resource(GunController {
@@ -175,55 +172,13 @@ pub fn setup(
         bullet_delay: Some(Timer::from_seconds(0.1, TimerMode::Repeating)),
         just_pressed: false,
         is_rotated: false,
-        model_handle: Some(entity_handler.gun_handle.clone())
+        model_handle: entity_handler.gun_handle.clone()
     });
 
     commands.insert_resource(CubemapController {
         is_loaded: false,
         image_handle: Some(skybox_handle)
     });
-}
-
-pub fn spawn_enemies(
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-    mut meshes: ResMut<Assets<Mesh>>,
-    entity_handler: Res<EntityHandler>
-) {
-    let material = materials.add(StandardMaterial { base_color_texture: Some(entity_handler.target_texture_handle.clone()), ..Default::default() }); 
-    let mesh = meshes.add(Sphere { radius: 0.1 });
-
-    let level_1_positions = [
-        Vec3::new(-18.23, 2.25, 16.47),
-        Vec3::new(-19.78, 2.72, 24.65),
-        Vec3::new(-28.2, 1.85, 9.7),
-        Vec3::new(-28.17, 1.93, -3.75),
-        Vec3::new(-13.42, 1.115, -0.3),
-        Vec3::new(-13.9, 1.114, -10.5),
-        Vec3::new(-8.0, 1.23, -9.55),
-        Vec3::new(-2.69, 1.015, -6.33),
-        Vec3::new(1.69, -0.72, 4.9),
-        Vec3::new(-0.84, -0.69, 9.2)
-    ];
-
-    for enemy_position in level_1_positions.iter() {
-        commands
-            .spawn((
-                PbrBundle {
-                    mesh: mesh.clone(),
-                    material: material.clone(),
-                    transform: Transform::from_translation(*enemy_position),
-                    ..Default::default()
-                },
-                AsyncCollider { ..Default::default() },
-                RigidBody::Fixed,
-                EnemyController {
-                    health: 1
-                },
-                GameEntity
-            ));
-    }
 }
 
 pub fn rotate_map(
@@ -274,11 +229,9 @@ pub fn load_cubemap(
                     ..Default::default()
                 });
             }
-    
             for mut skybox in &mut skyboxes {
                 skybox.image = image_handle.clone()
             }
-    
             cubemap.is_loaded = true;
         }
     }
