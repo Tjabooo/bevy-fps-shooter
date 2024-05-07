@@ -106,7 +106,7 @@ fn main() {
         audio::load_audio
     ))
     .add_systems(Update, (
-        game::update,
+        game::mouse_callback,
         game::diagnostics,
         entities::rotate_map,
         entities::rotate_gun,
@@ -124,6 +124,7 @@ fn main() {
         to: GameState::MainMenu
     }, entities::despawn_game_entities)
     // misc
+    .add_systems(Startup, entities::load_entities)
     .add_systems(OnTransition {
         from: GameState::PauseMenu,
         to: GameState::Playing

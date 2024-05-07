@@ -33,7 +33,7 @@ pub fn setup(mut commands: Commands) {
             shadow_normal_bias: 3.0
         },
         ..Default::default()
-    });
+    }).insert(GameEntity);
 
     // lamps
     let lamp_positions = [

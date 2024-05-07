@@ -6,7 +6,8 @@ use crate::structs::{
     MapController,
     PlayerController,
     MenuEntity,
-    GameEntity
+    GameEntity,
+    EntityHandler
 };
 use crate::GameState;
 use bevy_rapier3d::prelude::*;
@@ -28,9 +29,27 @@ use bevy::{
     } 
 };
 
+pub fn load_entities(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>
+) {
+    let map_handle: Handle<Scene> = asset_server.load("de_dust2.glb#Scene0");
+    let gun_handle: Handle<Scene> = asset_server.load("cs1.6_ak-47.glb#Scene0");
+    let crosshair_handle: Handle<Image> = asset_server.load("textures/crosshair.png");
+    let target_texture_handle: Handle<Image> = asset_server.load("textures/default_texture.png");
+
+    commands.insert_resource(EntityHandler {
+        map_handle: map_handle,
+        gun_handle: gun_handle,
+        crosshair_handle: crosshair_handle,
+        target_texture_handle: target_texture_handle
+    });
+}
+
 pub fn setup(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
+    entity_handler: Res<EntityHandler>
 ) {
     //skybox
     const CUBEMAP: &[(&str, CompressedImageFormats)] = &[
@@ -42,21 +61,19 @@ pub fn setup(
     let skybox_handle = asset_server.load(CUBEMAP[0].0);
 
     // map
-    let map = asset_server.load("de_dust2.glb#Scene0");
     commands.spawn(SceneBundle {
-        scene: map.clone(),
+        scene: entity_handler.map_handle.clone(),
         transform: Transform::from_xyz(0.0, 0.0, 0.0),
         //visibility: Visibility::Hidden,
         ..Default::default()
     })
     .insert(RigidBody::Fixed)
     .insert(AsyncSceneCollider { ..default() })
-    .insert(MapController { is_rotated: false, scene_handle: Some(map.clone()) } )
+    .insert(MapController { is_rotated: false, scene_handle: Some(entity_handler.map_handle.clone()) } )
     .insert(GameEntity);
 
     let spawn_point = Vec3::new(-8.0, -1.0, 16.5); // CT-Spawn (-8.0, -1.0, 16.5)
     let view_model = Vec3::new(0.10, -0.22, 0.35);
-    let gun_handle = asset_server.load("cs1.6_ak-47.glb#Scene0");
 
     // player
     commands.spawn((
@@ -88,13 +105,12 @@ pub fn setup(
                 image: skybox_handle.clone(),
                 brightness: 1000.0
             },
-            VisibilityBundle::default(),
-            GameEntity
+            VisibilityBundle::default()
         )).with_children(|parent| {
             parent.spawn((
                 HookedSceneBundle {
                     scene: SceneBundle {
-                        scene: gun_handle.clone(),
+                        scene: entity_handler.gun_handle.clone(),
                         transform: Transform::from_translation(view_model),
                         ..Default::default()
                     },
@@ -109,9 +125,8 @@ pub fn setup(
                     bullet_delay: Some(Timer::from_seconds(0.1, TimerMode::Repeating)),
                     just_pressed: false,
                     is_rotated: false,
-                    model_handle: Some(gun_handle.clone()),
+                    model_handle: Some(entity_handler.gun_handle.clone()),
                 },
-                GameEntity
             ));
         });
         })
@@ -126,13 +141,12 @@ pub fn setup(
         );
 
     //println!("primary: {}", primary.width());
-    let crosshair_handle = asset_server.load("textures/crosshair.png");
 
     // crosshair
     commands
        .spawn(ImageBundle {
                 image: UiImage {
-                    texture: crosshair_handle,
+                    texture: entity_handler.crosshair_handle.clone(),
                     ..default()
                 },
                 style: Style {
@@ -153,7 +167,7 @@ pub fn setup(
 
     commands.insert_resource(MapController {
         is_rotated: false,
-        scene_handle: Some(map)
+        scene_handle: Some(entity_handler.map_handle.clone())
     });
 
     commands.insert_resource(GunController {
@@ -161,7 +175,7 @@ pub fn setup(
         bullet_delay: Some(Timer::from_seconds(0.1, TimerMode::Repeating)),
         just_pressed: false,
         is_rotated: false,
-        model_handle: Some(gun_handle)
+        model_handle: Some(entity_handler.gun_handle.clone())
     });
 
     commands.insert_resource(CubemapController {
@@ -174,10 +188,10 @@ pub fn spawn_enemies(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    mut meshes: ResMut<Assets<Mesh>>
+    mut meshes: ResMut<Assets<Mesh>>,
+    entity_handler: Res<EntityHandler>
 ) {
-    let texture_handle = asset_server.load("textures/default_texture.png");
-    let material = materials.add(StandardMaterial { base_color_texture: Some(texture_handle.clone()), ..Default::default() }); 
+    let material = materials.add(StandardMaterial { base_color_texture: Some(entity_handler.target_texture_handle.clone()), ..Default::default() }); 
     let mesh = meshes.add(Sphere { radius: 0.1 });
 
     let level_1_positions = [
@@ -284,6 +298,6 @@ pub fn despawn_game_entities(
     game_entity_query: Query<Entity, With<GameEntity>>
 ) {
     for game_entity in game_entity_query.iter() {
-        commands.entity(game_entity).despawn();
+        commands.entity(game_entity).despawn_recursive();
     }
 }

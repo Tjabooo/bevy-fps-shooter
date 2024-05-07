@@ -130,3 +130,11 @@ pub struct MenuEntity;
 
 #[derive(Component)]
 pub struct GameEntity;
+
+#[derive(Resource)]
+pub struct EntityHandler {
+    pub map_handle: Handle<Scene>,
+    pub gun_handle: Handle<Scene>,
+    pub crosshair_handle: Handle<Image>,
+    pub target_texture_handle: Handle<Image>
+}

@@ -54,7 +54,7 @@ pub fn setup(
     ));
 }
 
-pub fn update(
+pub fn mouse_callback(
     mut player_query: Query<&mut Transform, With<PlayerController>>,
     mut camera_query: Query<(&mut CameraController, &mut Transform),
                             (With<Camera>, Without<PlayerController>)>,
