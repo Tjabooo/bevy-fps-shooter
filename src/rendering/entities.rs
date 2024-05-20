@@ -7,6 +7,7 @@ use crate::structs::{
     PlayerController,
     MenuEntity,
     GameEntity,
+    TextEntity,
     EntityHandler
 };
 use crate::GameState;
@@ -182,6 +183,49 @@ pub fn setup(
     });
 }
 
+pub fn spawn_start_text(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    text_entity_query: Query<&TextEntity>
+) {
+    if text_entity_query.iter().count() == 0 {
+        commands.spawn(
+            TextBundle::from_section(
+                "Shoot the 'Start' button to begin!",
+                TextStyle {
+                    font: asset_server.load("fonts/JetBrainsMonoNLNerdFont-Regular.ttf"),
+                    font_size: 30.0,
+                    ..Default::default()
+                }
+            ).with_style(Style {
+                top: Val::Percent(70.0),
+                left: Val::Percent(40.0),
+                ..Default::default()
+            })
+        ).insert((TextEntity, GameEntity));
+    }
+}
+
+pub fn spawn_fail_text(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>
+) {
+    commands.spawn(
+        TextBundle::from_section(
+            "You failed. Shoot the 'Start' button to try again.",
+            TextStyle {
+                font: asset_server.load("fonts/JetBrainsMonoNLNerdFont-Regular.ttf"),
+                font_size: 30.0,
+                ..Default::default()
+            }
+        ).with_style(Style {
+            top: Val::Percent(73.0),
+            left: Val::Percent(35.0),
+            ..Default::default()
+        })
+    ).insert((TextEntity, GameEntity));
+}
+
 pub fn rotate_map(
     mut query: Query<&mut Transform, With<MapController>>,
     mut map_controller: ResMut<MapController>,
@@ -253,5 +297,23 @@ pub fn despawn_game_entities(
 ) {
     for game_entity in game_entity_query.iter() {
         commands.entity(game_entity).despawn_recursive();
+    }
+}
+
+pub fn despawn_text_entities(
+    mut commands: Commands,
+    text_entity_query: Query<Entity, With<TextEntity>>
+) {
+    for text_entity in text_entity_query.iter() {
+        commands.entity(text_entity).despawn_recursive();
+    }
+}
+
+pub fn despawn_targets(
+    mut commands: Commands,
+    target_entity_query: Query<Entity, With<TargetController>>
+) {
+    for target_entity in target_entity_query.iter() {
+        commands.entity(target_entity).despawn_recursive();
     }
 }

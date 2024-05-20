@@ -184,7 +184,7 @@ impl TimeController {
     pub fn default() -> Self {
         Self {
             time_left: None,
-            level_1_time: 5.0,
+            level_1_time: 60.0,
             level_2_time: 80.0,
             level_3_time: 100.0
         }
@@ -261,6 +261,9 @@ pub struct MenuEntity;
 
 #[derive(Component)]
 pub struct GameEntity;
+
+#[derive(Component)]
+pub struct TextEntity;
 
 #[derive(Resource)]
 pub struct EntityHandler {

@@ -56,6 +56,7 @@ pub enum LevelState {
     Level1,
     Level2,
     Level3,
+    Failed
 }
 
 fn main() {
@@ -66,7 +67,7 @@ fn main() {
                 title: "VALORANT 2.0".into(),
                 //resolution: (800., 600.).into(),
                 mode: WindowMode::BorderlessFullscreen,
-                resolution: WindowResolution::new(1920., 1080.),
+                resolution: WindowResolution::new(2560., 1440.),
                 present_mode: PresentMode::AutoNoVsync,
                 window_theme: Some(WindowTheme::Dark),
                 cursor: Cursor { 
@@ -122,6 +123,7 @@ fn main() {
         entities::setup,
         lighting::setup,
     ))
+    .add_systems(OnEnter(LevelState::Failed), entities::despawn_targets)
     .add_systems(OnEnter(LevelState::Level1), game::initiate_level)
     .add_systems(OnEnter(LevelState::Level2), game::initiate_level)
     .add_systems(OnEnter(LevelState::Level3), game::initiate_level)
@@ -153,14 +155,13 @@ fn main() {
         audio::audio_playback,
         audio::audio_control
     ).run_if(game::in_playing_state))
-    // failed level
-    .add_systems(OnTransition {
-        from: GameState::Playing,
-        to: GameState::Failed
-    }, game::failed_level)
+    // text systems
+    .add_systems(OnEnter(GameState::Start), entities::spawn_start_text)
+    .add_systems(OnEnter(LevelState::Failed), entities::spawn_fail_text)
     // cleanup systems
     .add_systems(OnExit(GameState::MainMenu), entities::despawn_menu_entities)
     .add_systems(OnExit(GameState::PauseMenu), entities::despawn_menu_entities)
+    .add_systems(OnEnter(GameState::Playing), entities::despawn_text_entities)
     .add_systems(OnTransition {
         from: GameState::PauseMenu,
         to: GameState::MainMenu

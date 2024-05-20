@@ -135,7 +135,7 @@ pub fn update(
     current_state: Res<State<GameState>>,
     mut next_state: ResMut<NextState<GameState>>,
     mut next_level: ResMut<NextState<LevelState>>,
-    time_controller: ResMut<TimeController>
+    mut time_controller: ResMut<TimeController>
 ) {
     if key_event.just_pressed(KeyCode::Escape) {
         if *current_state.get() == GameState::Playing || *current_state.get() == GameState::Start {
@@ -144,7 +144,8 @@ pub fn update(
     }
 
     if time_controller.is_finished() {
-        next_state.set(GameState::Failed);
+        next_level.set(LevelState::Failed);
+        time_controller.time_left = None;
     }
 }
 
@@ -156,7 +157,7 @@ pub fn initiate_level(
     levels: Res<LevelController>,
     current_level: Res<State<LevelState>>,
     player_controller: Res<PlayerController>,
-    mut player_query: Query<(&mut Transform, &PlayerController)>,
+    mut player_query: Query<&mut Transform, With<PlayerController>>,
     mut time_controller: ResMut<TimeController>
 ) {
     let material = materials.add(StandardMaterial { base_color_texture: entity_handler.target_texture_handle.clone(), ..Default::default() }); 
@@ -168,6 +169,16 @@ pub fn initiate_level(
         level_3_time, 
         .. 
     } = TimeController::default();
+
+    for mut player_transform in player_query.iter_mut() {
+        *player_transform = Transform::from_translation(
+            Vec3::new(
+                player_controller.spawn_point.x,
+                player_controller.spawn_point.y,
+                player_controller.spawn_point.z
+            )
+        );
+    }
 
     commands
         .spawn((
@@ -189,7 +200,12 @@ pub fn initiate_level(
             GameEntity
         ));
 
+    println!("Got here 4!");
+
     match current_level.get() {
+        LevelState::Failed => {
+            println!(":3");
+        }
         LevelState::Level1 => {
             time_controller.set_timer(level_1_time);
             for target_position in levels.level_1_pos.iter() {
@@ -265,68 +281,36 @@ pub fn update_level_timer(
 pub fn change_level_state(
     target_query: Query<Entity, With<TargetController>>,
     current_level: Res<State<LevelState>>,
+    current_state: Res<State<GameState>>,
+    time_controller: Res<TimeController>,
     mut next_level: ResMut<NextState<LevelState>>,
     mut next_state: ResMut<NextState<GameState>>,
-    mut player_query: Query<(&mut Transform, &PlayerController)>
+    mut player_query: Query<(&mut Transform, &PlayerController)>,
 ) {  
-    for (mut player_transform, player_controller) in player_query.iter_mut() {
-        println!("{:?}", target_query.iter().count());
-        if target_query.iter().count() <= 0 {
-            match current_level.get() {
-                LevelState::Level1 => {
-                    next_level.set(LevelState::Level2);
-                    next_state.set(GameState::Start);
-                    *player_transform = Transform::from_translation(
-                        Vec3::new(
-                            player_controller.spawn_point.x,
-                            player_controller.spawn_point.y,
-                            player_controller.spawn_point.z
-                        )
-                    );
-                }
-                LevelState::Level2 => {
-                    next_level.set(LevelState::Level3);
-                    next_state.set(GameState::Start);
-                    *player_transform = Transform::from_translation(
-                        Vec3::new(
-                            player_controller.spawn_point.x,
-                            player_controller.spawn_point.y,
-                            player_controller.spawn_point.z
-                        )
-                    );
-                }
-                LevelState::Level3 => {
-                    
-                }
+    println!("{:?}", current_state.get());
+    println!("{:?}", current_level.get());
+    println!("{:?}", time_controller);
+    if target_query.iter().count() <= 0 {
+        match current_level.get() {
+            LevelState::Failed => {
+                next_level.set(LevelState::Level1);
+                next_state.set(GameState::Start);
+            }
+            LevelState::Level1 => {
+                next_level.set(LevelState::Level2);
+                next_state.set(GameState::Start);
+            }
+            LevelState::Level2 => {
+                next_level.set(LevelState::Level3);
+                next_state.set(GameState::Start);
+            }
+            LevelState::Level3 => {
+                
             }
         }
     }
     //println!("{:?}", target_query.iter().count());
     //println!("{:?}", current_level.get());
-}
-
-pub fn failed_level(
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    mut next_state: ResMut<NextState<GameState>>,
-    mut next_level: ResMut<NextState<LevelState>>
-) {
-    next_state.set(GameState::Start);
-    next_level.set(LevelState::Level1);
-
-    commands.spawn(
-        TextBundle::from_section(
-            "You failed. Shoot the\n'Start' button to try again.",
-            TextStyle {
-                font: asset_server.load("fonts/JetBrainsMonoNLNerdFont-Regular.ttf"),
-                font_size: 30.0,
-                ..Default::default()
-            }
-        ).with_style(Style {
-            top: Val::Percent(50.0),
-            ..Default::default()
-        })
-    ).insert(GameEntity);
 }
 
 pub fn mouse_callback(
@@ -399,6 +383,10 @@ pub fn in_start_state(game_state: Res<State<GameState>>) -> bool {
 
 pub fn in_playing_state(game_state: Res<State<GameState>>) -> bool {
     game_state.get() == &GameState::Playing
+}
+
+pub fn in_failed_state(level_state: Res<State<LevelState>>) -> bool {
+    level_state.get() == &LevelState::Failed
 }
 
 pub fn in_level_1_state(level_state: Res<State<LevelState>>) -> bool {
