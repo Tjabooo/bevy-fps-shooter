@@ -108,6 +108,7 @@ fn main() {
     .init_resource::<CubemapController>()
     .init_resource::<LevelController>()
     .init_resource::<EntityHandler>()
+    .init_resource::<LevelState>()
     // main menu
     .add_systems(OnEnter(GameState::MainMenu), menu::setup_main_menu)
     .add_systems(Update, menu::menu_interactions.run_if(game::in_main_menu_state))

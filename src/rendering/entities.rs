@@ -199,7 +199,7 @@ pub fn spawn_start_text(
                 }
             ).with_style(Style {
                 top: Val::Percent(70.0),
-                left: Val::Percent(40.0),
+                left: Val::Percent(38.0),
                 ..Default::default()
             })
         ).insert((TextEntity, GameEntity));
@@ -220,7 +220,7 @@ pub fn spawn_fail_text(
             }
         ).with_style(Style {
             top: Val::Percent(73.0),
-            left: Val::Percent(35.0),
+            left: Val::Percent(34.0),
             ..Default::default()
         })
     ).insert((TextEntity, GameEntity));

@@ -10,11 +10,13 @@ use crate::structs::{
     FpsText,
     TargetText,
     TimeText,
+    LevelText,
     TimeController,
     GameEntity,
     EntityHandler,
     TargetController,
     LevelController,
+    StartButton
 };
 use bevy::{
     prelude::*,
@@ -24,8 +26,6 @@ use bevy::{
         FrameTimeDiagnosticsPlugin
     }, 
 };
-
-use super::structs::StartButton;
 
 pub fn setup(
     mut commands: Commands,
@@ -61,8 +61,43 @@ pub fn setup(
                     ..Default::default()
                 }
             }),
-        ]),
+        ]).with_style(Style {
+            left: Val::Percent(0.35),
+            top: Val::Percent(0.2),
+            ..Default::default()
+        }),
         FpsText,
+        GameEntity
+    ));
+
+    commands.spawn((
+        TextBundle::from_sections([
+            TextSection::new(
+                "Level ",
+                TextStyle {
+                    font: asset_server.load("fonts/JetBrainsMonoNLNerdFont-Regular.ttf"),
+                    font_size: 30.0,
+                    ..Default::default()
+                },
+            ),
+            TextSection::from_style(if cfg!(feature = "default_font") {
+                TextStyle {
+                    font_size: 30.0,
+                    color: Color::GOLD,
+                    ..Default::default()
+                }
+            } else {
+                TextStyle {
+                    font: asset_server.load("fonts/JetBrainsMonoNLNerdFont-Regular.ttf"),
+                    font_size: 30.0,
+                    ..Default::default()
+                }
+            }),
+        ]).with_style(Style {
+            left: Val::Percent(47.0),
+            ..Default::default()
+        }),
+        LevelText,
         GameEntity
     ));
 
@@ -91,6 +126,7 @@ pub fn setup(
             }),
         ]).with_style(Style {
             left: Val::Percent(44.5),
+            top: Val::Percent(2.5),
             ..Default::default()
         }),
         TargetText::default(),
@@ -122,7 +158,7 @@ pub fn setup(
             }),
         ]).with_style(Style {
             left: Val::Percent(45.5),
-            top: Val::Percent(2.5),
+            top: Val::Percent(5.0),
             ..Default::default()
         }),
         TimeText,
@@ -199,8 +235,6 @@ pub fn initiate_level(
             StartButton,
             GameEntity
         ));
-
-    println!("Got here 4!");
 
     match current_level.get() {
         LevelState::Failed => {
@@ -286,10 +320,7 @@ pub fn change_level_state(
     mut next_level: ResMut<NextState<LevelState>>,
     mut next_state: ResMut<NextState<GameState>>,
     mut player_query: Query<(&mut Transform, &PlayerController)>,
-) {  
-    println!("{:?}", current_state.get());
-    println!("{:?}", current_level.get());
-    println!("{:?}", time_controller);
+) {
     if target_query.iter().count() <= 0 {
         match current_level.get() {
             LevelState::Failed => {
@@ -347,18 +378,30 @@ pub fn change_cursor_state(
 
 pub fn diagnostics(
     diagnostics: Res<DiagnosticsStore>,
-    mut fps_text_query: Query<&mut Text, (With<FpsText>, Without<TargetText>, Without<TimeText>)>,
-    mut target_text_query: Query<&mut Text, (With<TargetText>, Without<TimeText>)>,
+    mut fps_text_query: Query<&mut Text, (With<FpsText>, Without<TargetText>, Without<TimeText>, Without<LevelText>)>,
+    mut target_text_query: Query<&mut Text, (With<TargetText>, Without<TimeText>, Without<LevelText>)>,
     target_controller_query: Query<&TargetController>,
-    mut time_left_query: Query<&mut Text, (With<TimeText>, Without<TargetText>)>,
-    time_controller: Res<TimeController>
+    mut time_left_query: Query<&mut Text, (With<TimeText>, Without<TargetText>, Without<LevelText>)>,
+    time_controller: Res<TimeController>,
+    mut level_text_query: Query<&mut Text, (With<LevelText>, Without<TargetText>, Without<TimeText>)>,
+    current_level: Res<State<LevelState>>,
+    level_state: Res<LevelState>
 ) {
     let mut target_text = target_text_query.get_single_mut().unwrap();
     let targets_left = target_controller_query.iter().count();
     let mut time_text = time_left_query.get_single_mut().unwrap();
+    let mut level_text = level_text_query.get_single_mut().unwrap();    
+
+    let level = match current_level.get() {
+        LevelState::Level1 => "1",
+        LevelState::Level2 => "2",
+        LevelState::Level3 => "3",
+        LevelState::Failed => "Failed",
+    };
 
     target_text.sections[1].value = format!("{targets_left}");
     time_text.sections[1].value = time_controller.get_time_left();
+    level_text.sections[1].value = level.to_string();
 
     for mut fps_text in &mut fps_text_query {
         if let Some(fps) = diagnostics.get(&FrameTimeDiagnosticsPlugin::FPS) {
@@ -387,8 +430,4 @@ pub fn in_playing_state(game_state: Res<State<GameState>>) -> bool {
 
 pub fn in_failed_state(level_state: Res<State<LevelState>>) -> bool {
     level_state.get() == &LevelState::Failed
-}
-
-pub fn in_level_1_state(level_state: Res<State<LevelState>>) -> bool {
-    level_state.get() == &LevelState::Level1
 }

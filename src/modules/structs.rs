@@ -111,6 +111,9 @@ impl Default for CameraController {
 pub struct FpsText;
 
 #[derive(Component)]
+pub struct LevelText;
+
+#[derive(Component)]
 pub struct TargetText {
     pub targets_left: Option<usize>
 }
@@ -185,8 +188,8 @@ impl TimeController {
         Self {
             time_left: None,
             level_1_time: 60.0,
-            level_2_time: 80.0,
-            level_3_time: 100.0
+            level_2_time: 70.0,
+            level_3_time: 80.0
         }
     }
 }
@@ -221,13 +224,13 @@ impl Default for LevelController {
         Self {
             level_1_pos: vec![
                 Vec3::new(-28.1820, 1.7458, 9.6431),
-                Vec3::new(-27.9758, 1.7657, -3.8952),
-                Vec3::new(-18.1986, 0.9645, -10.1506),
-                Vec3::new(-13.4816, 0.9645, -0.2423),
-                Vec3::new(-14.2918, 0.9625, -8.6672),
-                Vec3::new(-8.0804, 1.1772, -9.7454),
-                Vec3::new(-0.7965, -0.7379, 2.1551),
-                Vec3::new(-0.8334, -0.7380, 8.4862)
+                //Vec3::new(-27.9758, 1.7657, -3.8952),
+                //Vec3::new(-18.1986, 0.9645, -10.1506),
+                //Vec3::new(-13.4816, 0.9645, -0.2423),
+                //Vec3::new(-14.2918, 0.9625, -8.6672),
+                //Vec3::new(-8.0804, 1.1772, -9.7454),
+                //Vec3::new(-0.7965, -0.7379, 2.1551),
+                //Vec3::new(-0.8334, -0.7380, 8.4862)
             ],
             level_2_pos: vec![
                 Vec3::new(-28.2415, 1.7605, 14.4738),
