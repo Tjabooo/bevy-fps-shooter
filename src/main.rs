@@ -9,7 +9,8 @@ use crate::structs::{
     CubemapController,
     LevelController,
     EntityHandler,
-    TargetController
+    TargetController,
+    TimeController
 };
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_scene_hook::HookPlugin;
@@ -44,14 +45,17 @@ pub enum GameState {
     #[default]
     MainMenu,
     PauseMenu,
+    Start,
     Playing,
+    Failed
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash, States, Resource, Default)]
 pub enum LevelState {
-    #[default]
+    #[default]   
     Level1,
-    Level2
+    Level2,
+    Level3,
 }
 
 fn main() {
@@ -96,6 +100,7 @@ fn main() {
     .insert_resource(Msaa::Sample8)
     .init_resource::<PlayerController>() 
     .init_resource::<TargetController>()
+    .init_resource::<TimeController>()
     .init_resource::<MapController>()
     .init_resource::<GunController>()  
     .init_resource::<AudioController>()
@@ -111,14 +116,33 @@ fn main() {
     // game
     .add_systems(OnTransition {
         from: GameState::MainMenu, 
-        to: GameState::Playing
+        to: GameState::Start
     }, (
         game::setup,
         entities::setup,
         lighting::setup,
     ))
-    .add_systems(OnEnter(LevelState::Level1), game::spawn_targets)
+    .add_systems(OnEnter(LevelState::Level1), game::initiate_level)
+    .add_systems(OnEnter(LevelState::Level2), game::initiate_level)
+    .add_systems(OnEnter(LevelState::Level3), game::initiate_level)
+    // start
     .add_systems(Update, (
+        game::update,
+        game::mouse_callback,
+        game::diagnostics,
+        entities::rotate_map,
+        entities::rotate_gun,
+        entities::load_cubemap,
+        //controls::update,
+        gunplay::update,
+        audio::audio_playback,
+        audio::audio_control
+    ).run_if(game::in_start_state))
+    // playing
+    .add_systems(Update, (
+        game::update,
+        game::change_level_state,
+        game::update_level_timer,
         game::mouse_callback,
         game::diagnostics,
         entities::rotate_map,
@@ -129,6 +153,11 @@ fn main() {
         audio::audio_playback,
         audio::audio_control
     ).run_if(game::in_playing_state))
+    // failed level
+    .add_systems(OnTransition {
+        from: GameState::Playing,
+        to: GameState::Failed
+    }, game::failed_level)
     // cleanup systems
     .add_systems(OnExit(GameState::MainMenu), entities::despawn_menu_entities)
     .add_systems(OnExit(GameState::PauseMenu), entities::despawn_menu_entities)

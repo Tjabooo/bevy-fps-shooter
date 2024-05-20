@@ -1,7 +1,9 @@
-use bevy::{log::Level, prelude::*};
+use bevy::prelude::*;
+use std::time::Duration;
 
 #[derive(Component, Debug, Resource)]
 pub struct PlayerController {
+    pub spawn_point: Vec3,
     pub velocity: Vec3,
     pub speed: f32,
     pub jump_height: f32,
@@ -13,6 +15,7 @@ pub struct PlayerController {
 impl Default for PlayerController {
     fn default() -> Self {
         Self {
+            spawn_point: Vec3::new(-9.0, -1.0, 16.5), // CT-Spawn
             speed: 3.2,
             jump_height: 0.11,
             crouch_modifier: 1.0,
@@ -99,7 +102,7 @@ impl Default for CameraController {
         Self {
             pitch: 0.0,
             yaw: 0.0,
-            sensitivity: 0.00025,
+            sensitivity: 0.0006,
         }
     }
 }
@@ -116,6 +119,74 @@ impl Default for TargetText {
     fn default() -> Self {
         Self {
             targets_left: None
+        }
+    }
+}
+
+#[derive(Component)]
+pub struct TimeText;
+
+#[derive(Component, Resource, Debug, Default)]
+pub struct TimeController {
+    pub time_left: Option<Timer>,
+    pub level_1_time: f32,
+    pub level_2_time: f32,
+    pub level_3_time: f32    
+}
+
+impl TimeController {
+    pub fn set_timer(&mut self, duration: f32) {
+        self.time_left = Some(Timer::new(
+            Duration::from_secs_f32(duration),
+            TimerMode::Once
+        ));
+    }
+
+    pub fn start_timer(&mut self, delta_time: Duration) {
+        if let Some(ref mut timer) = self.time_left {
+            timer.tick(delta_time);
+        }
+    }
+    
+    pub fn pause_timer(&mut self) {
+        if let Some(ref mut timer) = self.time_left {
+            timer.pause();
+        }
+    }
+
+    pub fn unpause_timer(&mut self) {
+        if let Some(ref mut timer) = self.time_left {
+            timer.unpause();
+        }
+    }
+
+    pub fn end_timer(&mut self) {
+        self.time_left = None;
+    }
+
+    pub fn is_finished(&self) -> bool {
+        if let Some(ref timer) = self.time_left {
+            timer.finished()
+        } else {
+            false
+        }
+    }
+
+    pub fn get_time_left(&self) -> String {
+        if let Some(ref timer) = self.time_left {
+            let duration_left = timer.duration() - timer.elapsed();
+            format!("{:.2}s", duration_left.as_secs_f32())
+        } else {
+            "No timer".to_string()
+        }
+    }
+
+    pub fn default() -> Self {
+        Self {
+            time_left: None,
+            level_1_time: 5.0,
+            level_2_time: 80.0,
+            level_3_time: 100.0
         }
     }
 }
@@ -141,7 +212,8 @@ impl Default for AudioController {
 #[derive(Resource)]
 pub struct LevelController {
     pub level_1_pos: Vec<Vec3>,
-    pub level_2_pos: Vec<Vec3>
+    pub level_2_pos: Vec<Vec3>,
+    pub level_3_pos: Vec<Vec3>
 }
 
 impl Default for LevelController {
@@ -164,10 +236,13 @@ impl Default for LevelController {
                 Vec3::new(-8.7544, 2.2123, 20.1367),
                 Vec3::new(-10.6621, 2.2412, 9.1706),
                 Vec3::new(-11.0602, 0.9644, 7.4012),
-                Vec3::new(-2.7770, 0.4772, 5.2681),
-                Vec3::new(-2.6943, 0.2644, -0.8119),
+                Vec3::new(-2.7770, 1.1772, 5.2681),
+                Vec3::new(-2.6943, 0.9644, -0.8119),
                 Vec3::new(-0.7965, -0.7379, 2.1551),
                 Vec3::new(-0.8334, -0.7380, 8.4862)
+            ],
+            level_3_pos: vec![
+                Vec3::new(0.0, 0.0, 0.0)
             ]
         }
     }
@@ -205,3 +280,6 @@ impl Default for EntityHandler {
         }
     }
 }
+
+#[derive(Component)]
+pub struct StartButton;

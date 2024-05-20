@@ -108,7 +108,7 @@ pub fn menu_interactions(
         if *interaction == Interaction::Pressed {
             match menu_button_action {
                 MenuButtonAction::Play => {
-                    new_game_state.set(GameState::Playing);
+                    new_game_state.set(GameState::Start);
                 }
                 MenuButtonAction::GoToMainMenu => {
                     new_game_state.set(GameState::MainMenu);

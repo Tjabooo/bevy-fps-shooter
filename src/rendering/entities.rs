@@ -49,7 +49,8 @@ pub fn load_entities(
 pub fn setup(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    entity_handler: Res<EntityHandler>
+    entity_handler: Res<EntityHandler>,
+    player_controller: Res<PlayerController>
 ) {
     //skybox
     const CUBEMAP: &[(&str, CompressedImageFormats)] = &[
@@ -71,7 +72,6 @@ pub fn setup(
     .insert(MapController { is_rotated: false, scene_handle: entity_handler.map_handle.clone() } )
     .insert(GameEntity);
 
-    let spawn_point = Vec3::new(-8.0, -1.0, 16.5); // CT-Spawn (-8.0, -1.0, 16.5)
     let view_model = Vec3::new(0.10, -0.22, 0.35);
 
     // player
@@ -130,9 +130,9 @@ pub fn setup(
         .insert(
             TransformBundle::from(
                 Transform::from_xyz(
-                    spawn_point.x,
-                    spawn_point.y,
-                    spawn_point.z
+                    player_controller.spawn_point.x,
+                    player_controller.spawn_point.y,
+                    player_controller.spawn_point.z
                 )
             )
         );
@@ -161,7 +161,8 @@ pub fn setup(
                 },
                 ..default()
             }).insert(GameEntity);
-
+           
+    
     commands.insert_resource(MapController {
         is_rotated: false,
         scene_handle: entity_handler.map_handle.clone()
@@ -192,7 +193,7 @@ pub fn rotate_map(
             for mut transform in query.iter_mut() {
                 transform.rotate(Quat::from_rotation_y(std::f32::consts::PI));
                 map_controller.is_rotated = true;
-                change_state.set(GameState::Playing);
+                change_state.set(GameState::Start);
             }
         }
     }

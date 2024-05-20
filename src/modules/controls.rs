@@ -13,15 +13,12 @@ use crate::structs::{
 
 pub fn update(
     key_event: Res<ButtonInput<KeyCode>>,
-    mouse_event: Res<ButtonInput<MouseButton>>,
     mut player_query: Query<(&mut Transform, &mut PlayerController), Without<Camera3d>>,
     mut camera_query: Query<&mut Transform, With<Camera3d>>,
     mut player_collider_query: Query<&mut Collider, With<PlayerController>>,
     mut gun_query: Query<&mut GunController>,
     time: Res<Time>,
-    rapier_context: Res<RapierContext>,
-    state: Res<State<GameState>>,
-    mut next_state: ResMut<NextState<GameState>>
+    rapier_context: Res<RapierContext>
 ) {
     for (mut transform, mut player) in player_query.iter_mut() {
         for mut camera in camera_query.iter_mut() {
@@ -96,18 +93,7 @@ pub fn update(
                                 player.is_crouched = false; 
                               }
                         }
-                        if mouse_event.just_pressed(MouseButton::Left) {
-                            gun_controller.shooting = true;
-                            gun_controller.just_pressed = true;
-                        } else if mouse_event.just_released(MouseButton::Left) {
-                            gun_controller.shooting = false;
-                        }
-                        if key_event.just_pressed(KeyCode::Escape) {
-                            if *state.get() == GameState::Playing {
-                                next_state.set(GameState::PauseMenu);
-                            }
-                        }
-                        
+                      
                         horizontal_velocity = horizontal_velocity.normalize_or_zero();
                         
                         player.velocity.x = horizontal_velocity.x * speed * friction * crouch_modifier * delta_time;
