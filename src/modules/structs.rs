@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use crate::GameState;
 use std::time::Duration;
 
 #[derive(Component, Debug, Resource)]
@@ -289,3 +290,16 @@ impl Default for EntityHandler {
 
 #[derive(Component)]
 pub struct StartButton;
+
+#[derive(Resource)]
+pub struct LastState {
+    pub state: Option<GameState>
+}
+
+impl Default for LastState {
+    fn default() -> Self {
+        Self {
+            state: None
+        }
+    }
+}

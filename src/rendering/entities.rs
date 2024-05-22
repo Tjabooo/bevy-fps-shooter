@@ -11,6 +11,7 @@ use crate::structs::{
     EntityHandler
 };
 use crate::GameState;
+use bevy::a11y::accesskit::TextAlign;
 use bevy_rapier3d::prelude::*;
 use bevy_scene_hook::{
     HookedSceneBundle,
@@ -198,8 +199,9 @@ pub fn spawn_start_text(
                     ..Default::default()
                 }
             ).with_style(Style {
-                top: Val::Percent(70.0),
-                left: Val::Percent(38.0),
+                align_self: AlignSelf::Center,
+                justify_self: JustifySelf::Center,
+                top: Val::Percent(10.0),
                 ..Default::default()
             })
         ).insert((TextEntity, GameEntity));
@@ -219,8 +221,9 @@ pub fn spawn_fail_text(
                 ..Default::default()
             }
         ).with_style(Style {
-            top: Val::Percent(73.0),
-            left: Val::Percent(34.0),
+            align_self: AlignSelf::Center,
+            justify_self: JustifySelf::Center,
+            top: Val::Percent(10.0),
             ..Default::default()
         })
     ).insert((TextEntity, GameEntity));

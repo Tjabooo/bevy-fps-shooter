@@ -10,7 +10,8 @@ use crate::structs::{
     LevelController,
     EntityHandler,
     TargetController,
-    TimeController
+    TimeController,
+    LastState
 };
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_scene_hook::HookPlugin;
@@ -40,7 +41,7 @@ use rendering::{
     entities
 };
 
-#[derive(Debug, Clone, Eq, PartialEq, Hash, States, Resource, Default)]
+#[derive(Debug, Clone, Eq, PartialEq, Hash, States, Resource, Default, Copy)]
 pub enum GameState {
     #[default]
     MainMenu,
@@ -52,7 +53,8 @@ pub enum GameState {
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash, States, Resource, Default)]
 pub enum LevelState {
-    #[default]   
+    #[default]
+    NoLevel,
     Level1,
     Level2,
     Level3,
@@ -67,7 +69,7 @@ fn main() {
                 title: "VALORANT 2.0".into(),
                 //resolution: (800., 600.).into(),
                 mode: WindowMode::BorderlessFullscreen,
-                resolution: WindowResolution::new(2560., 1440.),
+                resolution: WindowResolution::new(1920., 1080.),
                 present_mode: PresentMode::AutoNoVsync,
                 window_theme: Some(WindowTheme::Dark),
                 cursor: Cursor { 
@@ -109,6 +111,7 @@ fn main() {
     .init_resource::<LevelController>()
     .init_resource::<EntityHandler>()
     .init_resource::<LevelState>()
+    .init_resource::<LastState>()
     // main menu
     .add_systems(OnEnter(GameState::MainMenu), menu::setup_main_menu)
     .add_systems(Update, menu::menu_interactions.run_if(game::in_main_menu_state))
@@ -125,6 +128,7 @@ fn main() {
         lighting::setup,
     ))
     .add_systems(OnEnter(LevelState::Failed), entities::despawn_targets)
+    .add_systems(OnEnter(LevelState::NoLevel), entities::despawn_targets)
     .add_systems(OnEnter(LevelState::Level1), game::initiate_level)
     .add_systems(OnEnter(LevelState::Level2), game::initiate_level)
     .add_systems(OnEnter(LevelState::Level3), game::initiate_level)
@@ -172,6 +176,10 @@ fn main() {
     .add_systems(OnTransition {
         from: GameState::PauseMenu,
         to: GameState::Playing
+    }, game::change_cursor_state)
+    .add_systems(OnTransition {
+        from: GameState::PauseMenu,
+        to: GameState::Start
     }, game::change_cursor_state)
     .run();
 }

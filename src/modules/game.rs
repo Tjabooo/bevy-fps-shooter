@@ -16,7 +16,8 @@ use crate::structs::{
     EntityHandler,
     TargetController,
     LevelController,
-    StartButton
+    StartButton,
+    LastState
 };
 use bevy::{
     prelude::*,
@@ -94,7 +95,7 @@ pub fn setup(
                 }
             }),
         ]).with_style(Style {
-            left: Val::Percent(47.0),
+            justify_self: JustifySelf::Center,
             ..Default::default()
         }),
         LevelText,
@@ -125,7 +126,7 @@ pub fn setup(
                 }
             }),
         ]).with_style(Style {
-            left: Val::Percent(44.5),
+            justify_self: JustifySelf::Center,
             top: Val::Percent(2.5),
             ..Default::default()
         }),
@@ -157,7 +158,7 @@ pub fn setup(
                 }
             }),
         ]).with_style(Style {
-            left: Val::Percent(45.5),
+            justify_self: JustifySelf::Center,
             top: Val::Percent(5.0),
             ..Default::default()
         }),
@@ -169,12 +170,14 @@ pub fn setup(
 pub fn update(
     key_event: Res<ButtonInput<KeyCode>>,
     current_state: Res<State<GameState>>,
+    mut last_state: ResMut<LastState>,
     mut next_state: ResMut<NextState<GameState>>,
     mut next_level: ResMut<NextState<LevelState>>,
     mut time_controller: ResMut<TimeController>
 ) {
     if key_event.just_pressed(KeyCode::Escape) {
         if *current_state.get() == GameState::Playing || *current_state.get() == GameState::Start {
+            last_state.state = Some(*current_state.get());
             next_state.set(GameState::PauseMenu);
         }
     }
@@ -237,6 +240,9 @@ pub fn initiate_level(
         ));
 
     match current_level.get() {
+        LevelState::NoLevel => {
+            return
+        }
         LevelState::Failed => {
             println!(":3");
         }
@@ -323,6 +329,9 @@ pub fn change_level_state(
 ) {
     if target_query.iter().count() <= 0 {
         match current_level.get() {
+            LevelState::NoLevel => {
+                return
+            }
             LevelState::Failed => {
                 next_level.set(LevelState::Level1);
                 next_state.set(GameState::Start);
@@ -393,6 +402,7 @@ pub fn diagnostics(
     let mut level_text = level_text_query.get_single_mut().unwrap();    
 
     let level = match current_level.get() {
+        LevelState::NoLevel => "None",
         LevelState::Level1 => "1",
         LevelState::Level2 => "2",
         LevelState::Level3 => "3",

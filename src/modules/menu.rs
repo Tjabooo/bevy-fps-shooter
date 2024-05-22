@@ -1,10 +1,16 @@
-use bevy::window::CursorGrabMode;
-use crate::structs::MenuButtonAction;
-use crate::structs::MenuEntity;
-use crate::GameState;
+use crate::{
+    GameState,
+    LevelState,
+    structs::{
+        MenuButtonAction,
+        MenuEntity,
+        LastState
+    }
+};
 use bevy::{
     prelude::*,
-    app::AppExit
+    app::AppExit,
+    window::CursorGrabMode
 };
 
 
@@ -102,19 +108,23 @@ pub fn menu_interactions(
         (Changed<Interaction>, With<Button>),
     >,
     mut app_exit_event: ResMut<Events<AppExit>>,
-    mut new_game_state: ResMut<NextState<GameState>>
+    mut new_game_state: ResMut<NextState<GameState>>,
+    mut new_level_state: ResMut<NextState<LevelState>>,
+    last_state: Res<LastState>
 ) {
     for (interaction, menu_button_action) in &interaction_query {
         if *interaction == Interaction::Pressed {
             match menu_button_action {
                 MenuButtonAction::Play => {
+                    new_level_state.set(LevelState::Level1);
                     new_game_state.set(GameState::Start);
                 }
                 MenuButtonAction::GoToMainMenu => {
+                    new_level_state.set(LevelState::NoLevel);
                     new_game_state.set(GameState::MainMenu);
                 }
                 MenuButtonAction::Resume => {
-                    new_game_state.set(GameState::Playing);
+                    new_game_state.set(last_state.state.expect(":3"));
                 }
                 MenuButtonAction::Quit => {
                     app_exit_event.send(AppExit);
