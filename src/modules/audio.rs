@@ -45,12 +45,13 @@ pub fn audio_playback(
             if let Some(bullet_delay) = &gun_controller.bullet_delay {
                 if gun_controller.shooting && (gun_controller.just_pressed || bullet_delay.finished()) {
                     // gunshot
-                    commands.spawn(
+                    commands.spawn((
                         AudioBundle {
                             source: gunshot_handle.clone(),
                             settings: PlaybackSettings::DESPAWN
-                        }
-                    );
+                        },
+                        GameEntity
+                    ));
                 }
             }
         }

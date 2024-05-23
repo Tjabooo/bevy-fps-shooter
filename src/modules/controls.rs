@@ -11,6 +11,15 @@ use crate::structs::{
     GunController
 };
 
+//#[derive(Resource)]
+//pub struct Positions(Vec<Vec3>);
+//
+//impl Default for Positions {
+//    fn default() -> Self {
+//        Positions(Vec::new())
+//    }
+//}
+
 pub fn update(
     key_event: Res<ButtonInput<KeyCode>>,
     mut player_query: Query<(&mut Transform, &mut PlayerController), Without<Camera3d>>,
@@ -18,7 +27,8 @@ pub fn update(
     mut player_collider_query: Query<&mut Collider, With<PlayerController>>,
     mut gun_query: Query<&mut GunController>,
     time: Res<Time>,
-    rapier_context: Res<RapierContext>
+    rapier_context: Res<RapierContext>,
+    //mut positions: ResMut<Positions>
 ) {
     for (mut transform, mut player) in player_query.iter_mut() {
         for mut camera in camera_query.iter_mut() {
@@ -102,7 +112,17 @@ pub fn update(
                         
                         transform.translation += player.velocity;
     
-                        //info!("{:?}", transform.translation);
+                        // short 'script' to make it easier for me to create the levels
+                        //if key_event.just_pressed(KeyCode::KeyE) {
+                        //    // Round the translation to 4 decimal places
+                        //    let rounded_translation = Vec3::new(
+                        //        (transform.translation.x * 10000.0).round() / 10000.0,
+                        //        ((transform.translation.y + 0.7) * 10000.0).round() / 10000.0,
+                        //        (transform.translation.z * 10000.0).round() / 10000.0,                        
+                        //    );                        
+                        //    positions.0.push(rounded_translation);
+                        //    println!("Positions: {:?}", positions.0);
+                        //}
                     };
                 }
             }

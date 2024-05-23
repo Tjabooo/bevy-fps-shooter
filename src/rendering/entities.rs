@@ -1,3 +1,4 @@
+use crate::modules::structs::PlayerEntity;
 use crate::structs::{
     CameraController,
     CubemapController,
@@ -9,7 +10,8 @@ use crate::structs::{
     GameEntity,
     TextEntity,
     EntityHandler,
-    MapImage
+    MapImage,
+    BulletTracer
 };
 use crate::GameState;
 use bevy_rapier3d::prelude::*;
@@ -54,7 +56,8 @@ pub fn setup(
     entity_handler: Res<EntityHandler>,
     player_controller: Res<PlayerController>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    mut meshes: ResMut<Assets<Mesh>>
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut player_entity: ResMut<PlayerEntity>
 ) {
     //skybox
     const CUBEMAP: &[(&str, CompressedImageFormats)] = &[
@@ -76,10 +79,8 @@ pub fn setup(
     .insert(MapController { is_rotated: false, scene_handle: entity_handler.map_handle.clone() } )
     .insert(GameEntity);
 
-    let view_model = Vec3::new(0.10, -0.22, 0.35);
-
     // player
-    commands.spawn((
+    let player_entity_id = commands.spawn((
         PlayerController { ..Default::default() },
         RigidBody::Dynamic,
         GravityScale(0.9),
@@ -112,7 +113,7 @@ pub fn setup(
                 HookedSceneBundle {
                     scene: SceneBundle {
                         scene: entity_handler.gun_handle.clone().expect(""),
-                        transform: Transform::from_translation(view_model),
+                        transform: Transform::from_translation(player_controller.view_model),
                         ..Default::default()
                     },
                     hook: SceneHook::new(|entity, commands| {
@@ -139,9 +140,10 @@ pub fn setup(
                     player_controller.spawn_point.z
                 )
             )
-        );
+        ).id();
 
-    //println!("primary: {}", primary.width());
+    // sets the player entity
+    player_entity.entity = Some(player_entity_id);
 
     // crosshair
     commands.spawn(ImageBundle {

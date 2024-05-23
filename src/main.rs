@@ -1,17 +1,21 @@
 mod modules;
 mod rendering;
 
-use crate::structs::{
-    PlayerController,
-    MapController,
-    GunController,
-    AudioController,
-    CubemapController,
-    LevelController,
-    EntityHandler,
-    TargetController,
-    TimeController,
-    LastState
+use crate::{
+    //controls::Positions,
+    structs::{
+        PlayerController,
+        MapController,
+        GunController,
+        AudioController,
+        CubemapController,
+        LevelController,
+        EntityHandler,
+        TargetController,
+        TimeController,
+        LastState,
+        PlayerEntity
+    }
 };
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_scene_hook::HookPlugin;
@@ -53,11 +57,13 @@ pub enum GameState {
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash, States, Resource, Default)]
 pub enum LevelState {
-    #[default]
     NoLevel,
+    #[default]
     Level1,
     Level2,
     Level3,
+    Level4,
+    Level5,
     Failed
 }
 
@@ -112,6 +118,8 @@ fn main() {
     .init_resource::<EntityHandler>()
     .init_resource::<LevelState>()
     .init_resource::<LastState>()
+    .init_resource::<PlayerEntity>()
+    //.init_resource::<Positions>()
     // main menu
     .add_systems(OnEnter(GameState::MainMenu), menu::setup_main_menu)
     .add_systems(Update, menu::menu_interactions.run_if(game::in_main_menu_state))
@@ -132,6 +140,8 @@ fn main() {
     .add_systems(OnEnter(LevelState::Level1), game::initiate_level)
     .add_systems(OnEnter(LevelState::Level2), game::initiate_level)
     .add_systems(OnEnter(LevelState::Level3), game::initiate_level)
+    .add_systems(OnEnter(LevelState::Level4), game::initiate_level)
+    .add_systems(OnEnter(LevelState::Level5), game::initiate_level)
     // start
     .add_systems(Update, (
         game::update,
@@ -158,8 +168,7 @@ fn main() {
         controls::update,
         gunplay::update,
         gunplay::handle_tracers,
-        audio::audio_playback,
-        audio::audio_control
+        audio::audio_playback
     ).run_if(game::in_playing_state))
     // text systems
     .add_systems(OnEnter(GameState::Start), entities::spawn_start_text)
@@ -173,7 +182,7 @@ fn main() {
         to: GameState::MainMenu
     }, entities::despawn_game_entities)
     // misc
-    .add_systems(Startup, (entities::load_entities, audio::load_audio))
+    .add_systems(Startup, (entities::load_entities, audio::load_audio, audio::audio_control))
     .add_systems(OnTransition {
         from: GameState::PauseMenu,
         to: GameState::Playing

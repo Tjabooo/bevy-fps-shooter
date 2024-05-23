@@ -29,6 +29,7 @@ use bevy::{
     }, 
 };
 
+// Runs on startup and spawns overlay text
 pub fn setup(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
@@ -41,29 +42,16 @@ pub fn setup(
     window.cursor.visible = false;
     window.cursor.grab_mode = CursorGrabMode::Locked;
 
+    // spawn fps overlay text
     commands.spawn((
         TextBundle::from_sections([
-            TextSection::new(
-                "FPS: ",
-                TextStyle {
-                    font: text_font.clone(),
-                    font_size: 30.0,
-                    ..Default::default()
-                },
-            ),
-            TextSection::from_style(if cfg!(feature = "default_font") {
-                TextStyle {
-                    font_size: 30.0,
-                    color: Color::GOLD,
-                    ..Default::default()
-                }
-            } else {
+            TextSection::from_style(
                 TextStyle {
                     font: text_font.clone(),
                     font_size: 30.0,
                     ..Default::default()
                 }
-            }),
+            )         
         ]).with_style(Style {
             left: Val::Percent(0.35),
             top: Val::Percent(0.2),
@@ -73,23 +61,8 @@ pub fn setup(
         GameEntity
     ));
 
+    // spawn level/difficulty overlay text
     commands.spawn((
-        //TextBundle::from_sections([
-        //    TextSection::new(
-        //        "Level ",
-        //        TextStyle {
-        //            font: text_font.clone(),
-        //            font_size: 30.0,
-        //            ..Default::default()
-        //        },
-        //    ),
-        //    TextSection::from_style(
-        //        TextStyle {
-        //            font: text_font.clone(),
-        //            font_size: 30.0,
-        //            ..Default::default()
-        //        }
-        //    )   
         TextBundle::from_sections([
             TextSection::from_style(
                 TextStyle {
@@ -106,55 +79,35 @@ pub fn setup(
         GameEntity
     ));
 
+    // spawn targets left overlay text
     commands.spawn((
         TextBundle::from_sections([
-            TextSection::new(
-                "TARGETS LEFT: ",
-                TextStyle {
-                    font: text_font.clone(),
-                    font_size: 30.0,
-                    ..Default::default()
-                },
-            ),
             TextSection::from_style(
                 TextStyle {
                     font: text_font.clone(),
                     font_size: 30.0,
                     ..Default::default()
                 }
-            )
+            )         
         ]).with_style(Style {
             justify_self: JustifySelf::Center,
             top: Val::Percent(2.5),
             ..Default::default()
         }),
-        TargetText::default(),
+        TargetText { targets_left: None },
         GameEntity
     ));
 
+    // spawn time overlay text
     commands.spawn((
         TextBundle::from_sections([
-            TextSection::new(
-                "TIME: ",
+            TextSection::from_style(
                 TextStyle {
-                    font: asset_server.load("fonts/JetBrainsMonoNLNerdFont-Regular.ttf"),
-                    font_size: 30.0,
-                    ..Default::default()
-                },
-            ),
-            TextSection::from_style(if cfg!(feature = "default_font") {
-                TextStyle {
-                    font_size: 30.0,
-                    color: Color::GOLD,
-                    ..Default::default()
-                }
-            } else {
-                TextStyle {
-                    font: asset_server.load("fonts/JetBrainsMonoNLNerdFont-Regular.ttf"),
+                    font: text_font.clone(),
                     font_size: 30.0,
                     ..Default::default()
                 }
-            }),
+            )         
         ]).with_style(Style {
             justify_self: JustifySelf::Center,
             top: Val::Percent(5.0),
@@ -165,6 +118,7 @@ pub fn setup(
     ));
 }
 
+// Handles pause menu and the timer once finished
 pub fn update(
     key_event: Res<ButtonInput<KeyCode>>,
     current_state: Res<State<GameState>>,
@@ -186,6 +140,7 @@ pub fn update(
     }
 }
 
+// Runs every level change, handles and spawns targets/start button/map image
 pub fn initiate_level(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
@@ -196,20 +151,24 @@ pub fn initiate_level(
     current_level: Res<State<LevelState>>,
     player_controller: Res<PlayerController>,
     mut player_query: Query<&mut Transform, With<PlayerController>>,
-    mut time_controller: ResMut<TimeController>
+    mut time_controller: ResMut<TimeController>,
+    map_image_query: Query<Entity, With<MapImage>>
 ) {
     let ball_material = materials.add(StandardMaterial { base_color_texture: entity_handler.target_texture_handle.clone(), ..Default::default() }); 
     let ball_mesh = meshes.add(Sphere { radius: 0.1 });
 
-    let mut map_image_handle: StandardMaterial;
+    let mut map_image_handle: StandardMaterial = Color::SILVER.into();
 
     let TimeController { 
         level_1_time, 
         level_2_time, 
         level_3_time, 
+        level_4_time,
+        level_5_time,
         .. 
     } = TimeController::default();
 
+    // move player entity to spawn point
     for mut player_transform in player_query.iter_mut() {
         *player_transform = Transform::from_translation(
             Vec3::new(
@@ -220,28 +179,28 @@ pub fn initiate_level(
         );
     }
 
+    // spawn start button entity
     commands.spawn((
-            PbrBundle {
-                mesh: ball_mesh.clone(),
-                material: ball_material.clone(),
-                transform: Transform::from_translation(
-                    Vec3::new(
-                        player_controller.spawn_point.x,
-                        player_controller.spawn_point.y,
-                        player_controller.spawn_point.z - 0.7
-                    )
-                ),
-                ..Default::default()
-            },
-            AsyncCollider { ..Default::default() },
-            RigidBody::Fixed,
-            StartButton,
-            GameEntity
-        ));
+        PbrBundle {
+            mesh: ball_mesh.clone(),
+            material: ball_material.clone(),
+            transform: Transform::from_translation(
+                Vec3::new(
+                    player_controller.spawn_point.x,
+                    player_controller.spawn_point.y,
+                    player_controller.spawn_point.z - 0.7
+                )
+            ),
+            ..Default::default()
+        },
+        AsyncCollider { ..Default::default() },
+        RigidBody::Fixed,
+        StartButton,
+        GameEntity
+    ));
 
     match current_level.get() {
         LevelState::NoLevel => {
-            map_image_handle = asset_server.load("de_dust2_top_level.png").into();
             return
         }
         LevelState::Failed => {
@@ -313,9 +272,60 @@ pub fn initiate_level(
                     RigidBody::Fixed,
                     TargetController { health: 1 },
                     GameEntity
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            ));
+                ));
             }
         }
+        LevelState::Level4 => {
+            //set timer
+            time_controller.set_timer(level_4_time);
+
+            // set map image
+            map_image_handle = asset_server.load("levels/level4.png").into();
+
+            // spawn targets
+            for target_position in levels.level_4_pos.iter() {
+                commands.spawn((
+                    PbrBundle {
+                        mesh: ball_mesh.clone(),
+                        material: ball_material.clone(),
+                        transform: Transform::from_translation(*target_position),
+                        ..Default::default()
+                    },
+                    AsyncCollider { ..Default::default() },
+                    RigidBody::Fixed,
+                    TargetController { health: 1 },
+                    GameEntity
+                ));
+            }
+        }
+        LevelState::Level5 => {
+            //set timer
+            time_controller.set_timer(level_5_time);
+
+            // set map image
+            map_image_handle = asset_server.load("levels/level5.png").into();
+
+            // spawn targets
+            for target_position in levels.level_5_pos.iter() {
+                commands.spawn((
+                    PbrBundle {
+                        mesh: ball_mesh.clone(),
+                        material: ball_material.clone(),
+                        transform: Transform::from_translation(*target_position),
+                        ..Default::default()
+                    },
+                    AsyncCollider { ..Default::default() },
+                    RigidBody::Fixed,
+                    TargetController { health: 1 },
+                    GameEntity
+                ));
+            }
+        }
+    }
+
+    // despawn old map image
+    if let Ok(map_image_entity) = map_image_query.get_single() {
+        commands.entity(map_image_entity).despawn();
     }
 
     // spawn map image
@@ -335,13 +345,15 @@ pub fn initiate_level(
     }).insert((MapImage, GameEntity));
 }
 
+// This method updates the timer every frame
 pub fn update_level_timer(
     mut time_controller: ResMut<TimeController>,
     time: Res<Time>
 ) {
-    time_controller.start_timer(time.delta());    
+    time_controller.run_timer(time.delta());
 }
 
+// This method changes level state on call
 pub fn change_level_state(
     target_query: Query<Entity, With<TargetController>>,
     current_level: Res<State<LevelState>>,
@@ -369,7 +381,15 @@ pub fn change_level_state(
                 next_state.set(GameState::Start);
             }
             LevelState::Level3 => {
-                
+                next_level.set(LevelState::Level4);
+                next_state.set(GameState::Start);
+            }
+            LevelState::Level4 => {
+                next_level.set(LevelState::Level5);
+                next_state.set(GameState::Start);
+            }
+            LevelState::Level5 => {
+                // ADD 'WINNER' SCREEN WHERE YOU ENCOURAGE THEM TO TRY TO BEAT THEIR PB'S
             }
         }
     }
@@ -377,6 +397,7 @@ pub fn change_level_state(
     //println!("{:?}", current_level.get());
 }
 
+// This method handles mouse motion
 pub fn mouse_callback(
     mut player_query: Query<&mut Transform, With<PlayerController>>,
     mut camera_query: Query<(&mut CameraController, &mut Transform),
@@ -400,6 +421,7 @@ pub fn mouse_callback(
     }
 }
 
+// Changes cursor state in/out of menu
 pub fn change_cursor_state(
     mut window: Query<&mut Window>
 ) {
@@ -409,6 +431,7 @@ pub fn change_cursor_state(
     window.cursor.grab_mode = CursorGrabMode::Locked;
 }
 
+// Handles the text overlay
 pub fn diagnostics(
     diagnostics: Res<DiagnosticsStore>,
     mut fps_text_query: Query<&mut Text, (With<FpsText>, Without<TargetText>, Without<TimeText>, Without<LevelText>)>,
@@ -420,34 +443,41 @@ pub fn diagnostics(
     current_level: Res<State<LevelState>>,
     level_state: Res<LevelState>
 ) {
+    let mut fps_text = fps_text_query.get_single_mut().unwrap();
+    let Some(raw_fps) = diagnostics.get(&FrameTimeDiagnosticsPlugin::FPS) else { return };
+    let Some(fps) = raw_fps.smoothed() else { return };
+
     let mut target_text = target_text_query.get_single_mut().unwrap();
     let targets_left = target_controller_query.iter().count();
+    
     let mut time_text = time_left_query.get_single_mut().unwrap();
-    let mut level_text = level_text_query.get_single_mut().unwrap();    
 
-    let level = match current_level.get() {
-        LevelState::NoLevel => ["None", "None"],
-        LevelState::Level1 => ["1", "Very Easy"],
-        LevelState::Level2 => ["2", "Easy"],
-        LevelState::Level3 => ["3", "Medium"],
-        LevelState::Failed => ["Failed", "Failed"],
+    let mut level_text = level_text_query.get_single_mut().unwrap();    
+    let level_info = match current_level.get() {
+        LevelState::NoLevel => ["NONE", "NONE"],
+        LevelState::Level1 => ["1", "VERY EASY"],
+        LevelState::Level2 => ["2", "EASY"],
+        LevelState::Level3 => ["3", "MEDIUM"],
+        LevelState::Level4 => ["4", "HARD"],
+        LevelState::Level5 => ["5", "VERY HARD"],
+        LevelState::Failed => ["FAILED", "FAILED"],
     };
 
-    level_text.sections[0].value = format!(
-        "Level {} - {}", level[0].to_string(), level[1].to_string()
+    fps_text.sections[0].value = format!(
+        "FPS: {}", fps.round()
     );
-    target_text.sections[1].value = targets_left.to_string();
-    time_text.sections[1].value = time_controller.get_time_left();
-
-    for mut fps_text in &mut fps_text_query {
-        if let Some(fps) = diagnostics.get(&FrameTimeDiagnosticsPlugin::FPS) {
-            if let Some(value) = fps.smoothed() {
-                fps_text.sections[1].value = format!("{value:.0}");
-            }
-        }
-    }
+    level_text.sections[0].value = format!(
+        "LEVEL {} - {}", level_info[0].to_string(), level_info[1].to_string()
+    );
+    target_text.sections[0].value = format!(
+        "TARGETS LEFT: {}", targets_left
+    );
+    time_text.sections[0].value = format!(
+        "TIME: {}", time_controller.get_time_left()
+    );
 }
 
+// These methods return a bool depending on current state
 pub fn in_main_menu_state(game_state: Res<State<GameState>>) -> bool {
     game_state.get() == &GameState::MainMenu
 }
@@ -462,8 +492,4 @@ pub fn in_start_state(game_state: Res<State<GameState>>) -> bool {
 
 pub fn in_playing_state(game_state: Res<State<GameState>>) -> bool {
     game_state.get() == &GameState::Playing
-}
-
-pub fn in_failed_state(level_state: Res<State<LevelState>>) -> bool {
-    level_state.get() == &LevelState::Failed
 }
