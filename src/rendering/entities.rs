@@ -8,10 +8,10 @@ use crate::structs::{
     MenuEntity,
     GameEntity,
     TextEntity,
-    EntityHandler
+    EntityHandler,
+    MapImage
 };
 use crate::GameState;
-use bevy::a11y::accesskit::TextAlign;
 use bevy_rapier3d::prelude::*;
 use bevy_scene_hook::{
     HookedSceneBundle,
@@ -52,7 +52,9 @@ pub fn setup(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     entity_handler: Res<EntityHandler>,
-    player_controller: Res<PlayerController>
+    player_controller: Res<PlayerController>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    mut meshes: ResMut<Assets<Mesh>>
 ) {
     //skybox
     const CUBEMAP: &[(&str, CompressedImageFormats)] = &[
@@ -142,29 +144,27 @@ pub fn setup(
     //println!("primary: {}", primary.width());
 
     // crosshair
-    commands
-       .spawn(ImageBundle {
-                image: UiImage {
-                    texture: entity_handler.crosshair_handle.clone().expect(""),
-                    ..default()
-                },
-                style: Style {
-                    position_type: PositionType::Absolute,
-                    width: Val::Px(24.0),
-                    height: Val::Px(24.0),
-                    left: Val::Percent(50.0),
-                    bottom: Val::Percent(50.0),
-                    margin: UiRect {
-                        left: Val::Px(-12.0),
-                        bottom: Val::Px(-12.0),
-                        ..default()
-                    },
-                    ..default()
-                },
+    commands.spawn(ImageBundle {
+        image: UiImage {
+            texture: entity_handler.crosshair_handle.clone().expect(""),
+            ..default()
+        },
+        style: Style {
+            position_type: PositionType::Absolute,
+            width: Val::Px(24.0),
+            height: Val::Px(24.0),
+            left: Val::Percent(50.0),
+            bottom: Val::Percent(50.0),
+            margin: UiRect {
+                left: Val::Px(-12.0),
+                bottom: Val::Px(-12.0),
                 ..default()
-            }).insert(GameEntity);
-           
-    
+            },
+            ..default()
+        },
+        ..default()
+    }).insert(GameEntity);
+
     commands.insert_resource(MapController {
         is_rotated: false,
         scene_handle: entity_handler.map_handle.clone()

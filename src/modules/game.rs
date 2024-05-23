@@ -17,7 +17,8 @@ use crate::structs::{
     TargetController,
     LevelController,
     StartButton,
-    LastState
+    LastState,
+    MapImage
 };
 use bevy::{
     prelude::*,
@@ -35,6 +36,7 @@ pub fn setup(
     target_controller_query: Query<&TargetController>
 ) {
     let mut window = window.get_single_mut().unwrap();
+    let text_font = asset_server.load("fonts/JetBrainsMonoNLNerdFont-Regular.ttf");
 
     window.cursor.visible = false;
     window.cursor.grab_mode = CursorGrabMode::Locked;
@@ -44,7 +46,7 @@ pub fn setup(
             TextSection::new(
                 "FPS: ",
                 TextStyle {
-                    font: asset_server.load("fonts/JetBrainsMonoNLNerdFont-Regular.ttf"),
+                    font: text_font.clone(),
                     font_size: 30.0,
                     ..Default::default()
                 },
@@ -57,7 +59,7 @@ pub fn setup(
                 }
             } else {
                 TextStyle {
-                    font: asset_server.load("fonts/JetBrainsMonoNLNerdFont-Regular.ttf"),
+                    font: text_font.clone(),
                     font_size: 30.0,
                     ..Default::default()
                 }
@@ -72,28 +74,30 @@ pub fn setup(
     ));
 
     commands.spawn((
+        //TextBundle::from_sections([
+        //    TextSection::new(
+        //        "Level ",
+        //        TextStyle {
+        //            font: text_font.clone(),
+        //            font_size: 30.0,
+        //            ..Default::default()
+        //        },
+        //    ),
+        //    TextSection::from_style(
+        //        TextStyle {
+        //            font: text_font.clone(),
+        //            font_size: 30.0,
+        //            ..Default::default()
+        //        }
+        //    )   
         TextBundle::from_sections([
-            TextSection::new(
-                "Level ",
+            TextSection::from_style(
                 TextStyle {
-                    font: asset_server.load("fonts/JetBrainsMonoNLNerdFont-Regular.ttf"),
-                    font_size: 30.0,
-                    ..Default::default()
-                },
-            ),
-            TextSection::from_style(if cfg!(feature = "default_font") {
-                TextStyle {
-                    font_size: 30.0,
-                    color: Color::GOLD,
-                    ..Default::default()
-                }
-            } else {
-                TextStyle {
-                    font: asset_server.load("fonts/JetBrainsMonoNLNerdFont-Regular.ttf"),
+                    font: text_font.clone(),
                     font_size: 30.0,
                     ..Default::default()
                 }
-            }),
+            )         
         ]).with_style(Style {
             justify_self: JustifySelf::Center,
             ..Default::default()
@@ -107,24 +111,18 @@ pub fn setup(
             TextSection::new(
                 "TARGETS LEFT: ",
                 TextStyle {
-                    font: asset_server.load("fonts/JetBrainsMonoNLNerdFont-Regular.ttf"),
+                    font: text_font.clone(),
                     font_size: 30.0,
                     ..Default::default()
                 },
             ),
-            TextSection::from_style(if cfg!(feature = "default_font") {
+            TextSection::from_style(
                 TextStyle {
-                    font_size: 30.0,
-                    color: Color::GOLD,
-                    ..Default::default()
-                }
-            } else {
-                TextStyle {
-                    font: asset_server.load("fonts/JetBrainsMonoNLNerdFont-Regular.ttf"),
+                    font: text_font.clone(),
                     font_size: 30.0,
                     ..Default::default()
                 }
-            }),
+            )
         ]).with_style(Style {
             justify_self: JustifySelf::Center,
             top: Val::Percent(2.5),
@@ -190,6 +188,7 @@ pub fn update(
 
 pub fn initiate_level(
     mut commands: Commands,
+    asset_server: Res<AssetServer>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut meshes: ResMut<Assets<Mesh>>,
     entity_handler: Res<EntityHandler>,
@@ -199,9 +198,11 @@ pub fn initiate_level(
     mut player_query: Query<&mut Transform, With<PlayerController>>,
     mut time_controller: ResMut<TimeController>
 ) {
-    let material = materials.add(StandardMaterial { base_color_texture: entity_handler.target_texture_handle.clone(), ..Default::default() }); 
-    let mesh = meshes.add(Sphere { radius: 0.1 });
-    
+    let ball_material = materials.add(StandardMaterial { base_color_texture: entity_handler.target_texture_handle.clone(), ..Default::default() }); 
+    let ball_mesh = meshes.add(Sphere { radius: 0.1 });
+
+    let mut map_image_handle: StandardMaterial;
+
     let TimeController { 
         level_1_time, 
         level_2_time, 
@@ -219,16 +220,15 @@ pub fn initiate_level(
         );
     }
 
-    commands
-        .spawn((
+    commands.spawn((
             PbrBundle {
-                mesh: mesh.clone(),
-                material: material.clone(),
+                mesh: ball_mesh.clone(),
+                material: ball_material.clone(),
                 transform: Transform::from_translation(
                     Vec3::new(
                         player_controller.spawn_point.x,
-                        player_controller.spawn_point.y + 0.2,
-                        player_controller.spawn_point.z - 4.9
+                        player_controller.spawn_point.y,
+                        player_controller.spawn_point.z - 0.7
                     )
                 ),
                 ..Default::default()
@@ -241,74 +241,98 @@ pub fn initiate_level(
 
     match current_level.get() {
         LevelState::NoLevel => {
+            map_image_handle = asset_server.load("de_dust2_top_level.png").into();
             return
         }
         LevelState::Failed => {
             println!(":3");
         }
         LevelState::Level1 => {
+            // set timer
             time_controller.set_timer(level_1_time);
-            for target_position in levels.level_1_pos.iter() {
-                commands
-                    .spawn((
-                        PbrBundle {
-                            mesh: mesh.clone(),
-                            material: material.clone(),
-                            transform: Transform::from_translation(*target_position),
-                            ..Default::default()
-                        },
-                        AsyncCollider { ..Default::default() },
-                        RigidBody::Fixed,
-                        TargetController {
-                            health: 1
-                        },
-                        GameEntity
-                    ));      
-            }
+            
+            // spawn map image path
+            map_image_handle = asset_server.load("levels/level1.png").into();
 
+            // spawn targets
+            for target_position in levels.level_1_pos.iter() {
+                commands.spawn((
+                    PbrBundle {
+                        mesh: ball_mesh.clone(),
+                        material: ball_material.clone(),
+                        transform: Transform::from_translation(*target_position),
+                        ..Default::default()
+                    },
+                    AsyncCollider { ..Default::default() },
+                    RigidBody::Fixed,
+                    TargetController { health: 1 },
+                    GameEntity
+                ));
+            }
         }
         LevelState::Level2 => {
+            // set timer
             time_controller.set_timer(level_2_time);
+
+            // set map image asset
+            map_image_handle = asset_server.load("levels/level2.png").into();
+
+            // spawn targets
             for target_position in levels.level_2_pos.iter() {
-                commands
-                    .spawn((
-                        PbrBundle {
-                            mesh: mesh.clone(),
-                            material: material.clone(),
-                            transform: Transform::from_translation(*target_position),
-                            ..Default::default()
-                        },
-                        AsyncCollider { ..Default::default() },
-                        RigidBody::Fixed,
-                        TargetController {
-                            health: 1
-                        },
-                        GameEntity
-                    ));      
+                commands.spawn((
+                    PbrBundle {
+                        mesh: ball_mesh.clone(),
+                        material: ball_material.clone(),
+                        transform: Transform::from_translation(*target_position),
+                        ..Default::default()
+                    },
+                    AsyncCollider { ..Default::default() },
+                    RigidBody::Fixed,
+                    TargetController { health: 1 },
+                    GameEntity
+                ));
             }
         }
         LevelState::Level3 => {
+            // set timer
             time_controller.set_timer(level_3_time);
+
+            // set map image 
+            map_image_handle = asset_server.load("levels/level3.png").into();
+
+            // spawn targets
             for target_position in levels.level_3_pos.iter() {
-                commands
-                    .spawn((
-                        PbrBundle {
-                            mesh: mesh.clone(),
-                            material: material.clone(),
-                            transform: Transform::from_translation(*target_position),
-                            ..Default::default()
-                        },
-                        AsyncCollider { ..Default::default() },
-                        RigidBody::Fixed,
-                        TargetController {
-                            health: 1
-                        },
-                        GameEntity
-                    ));      
+                commands.spawn((
+                    PbrBundle {
+                        mesh: ball_mesh.clone(),
+                        material: ball_material.clone(),
+                        transform: Transform::from_translation(*target_position),
+                        ..Default::default()
+                    },
+                    AsyncCollider { ..Default::default() },
+                    RigidBody::Fixed,
+                    TargetController { health: 1 },
+                    GameEntity
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            ));
             }
         }
     }
 
+    // spawn map image
+    commands.spawn(PbrBundle {
+        mesh: meshes.add(Plane3d::default().mesh().size(2.5, 2.5)),
+        material: materials.add(map_image_handle),
+        transform: Transform {
+            translation: Vec3::new(
+                player_controller.spawn_point.x,
+                player_controller.spawn_point.y + 0.75,
+                player_controller.spawn_point.z - 5.0,
+            ),
+            rotation: Quat::from_rotation_x(std::f32::consts::FRAC_PI_2),
+            ..Default::default()
+        },
+        ..Default::default()
+    }).insert((MapImage, GameEntity));
 }
 
 pub fn update_level_timer(
@@ -402,16 +426,18 @@ pub fn diagnostics(
     let mut level_text = level_text_query.get_single_mut().unwrap();    
 
     let level = match current_level.get() {
-        LevelState::NoLevel => "None",
-        LevelState::Level1 => "1",
-        LevelState::Level2 => "2",
-        LevelState::Level3 => "3",
-        LevelState::Failed => "Failed",
+        LevelState::NoLevel => ["None", "None"],
+        LevelState::Level1 => ["1", "Very Easy"],
+        LevelState::Level2 => ["2", "Easy"],
+        LevelState::Level3 => ["3", "Medium"],
+        LevelState::Failed => ["Failed", "Failed"],
     };
 
-    target_text.sections[1].value = format!("{targets_left}");
+    level_text.sections[0].value = format!(
+        "Level {} - {}", level[0].to_string(), level[1].to_string()
+    );
+    target_text.sections[1].value = targets_left.to_string();
     time_text.sections[1].value = time_controller.get_time_left();
-    level_text.sections[1].value = level.to_string();
 
     for mut fps_text in &mut fps_text_query {
         if let Some(fps) = diagnostics.get(&FrameTimeDiagnosticsPlugin::FPS) {
