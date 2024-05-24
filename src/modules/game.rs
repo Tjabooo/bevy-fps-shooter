@@ -336,7 +336,7 @@ pub fn initiate_level(
             translation: Vec3::new(
                 player_controller.spawn_point.x,
                 player_controller.spawn_point.y + 0.75,
-                player_controller.spawn_point.z - 5.0,
+                player_controller.spawn_point.z - 2.0,
             ),
             rotation: Quat::from_rotation_x(std::f32::consts::FRAC_PI_2),
             ..Default::default()

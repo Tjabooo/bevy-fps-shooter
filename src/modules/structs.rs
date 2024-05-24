@@ -177,7 +177,7 @@ impl TimeController {
         Self {
             time_left: None,
             level_1_time: 50.0,
-            level_2_time: 60.0,
+            level_2_time: 50.0,
             level_3_time: 70.0,
             level_4_time: 80.0,
             level_5_time: 90.0
