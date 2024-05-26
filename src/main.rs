@@ -167,8 +167,7 @@ fn main() {
         entities::load_cubemap,
         controls::update,
         gunplay::update,
-        gunplay::handle_tracers,
-        audio::audio_playback
+        audio::audio_playback,
     ).run_if(game::in_playing_state))
     // text systems
     .add_systems(OnEnter(GameState::Start), entities::spawn_start_text)

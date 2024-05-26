@@ -11,7 +11,6 @@ use crate::structs::{
     TextEntity,
     EntityHandler,
     MapImage,
-    BulletTracer
 };
 use crate::GameState;
 use bevy_rapier3d::prelude::*;
