@@ -7,6 +7,7 @@ use crate::structs::{
     GameEntity
 };
 
+// Loads audio assets
 pub fn load_audio(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
@@ -20,6 +21,7 @@ pub fn load_audio(
     });
 }
 
+// Plays audio on condition
 pub fn audio_playback(
     mut commands: Commands,
     gun_query: Query<&GunController>,
@@ -29,7 +31,7 @@ pub fn audio_playback(
     for gun_controller in gun_query.iter() {
         if let Some(ambience_handle) = &audio_controller.ambience_handle {
             if ambience_query.iter().next().is_none() {
-                // de_dust2 ambience
+                // plays ambience if it's not already playing
                 commands.spawn((
                     AudioBundle {
                         source: ambience_handle.clone(),
@@ -44,11 +46,11 @@ pub fn audio_playback(
         if let Some(gunshot_handle) = &audio_controller.gunshot_handle {
             if let Some(bullet_delay) = &gun_controller.bullet_delay {
                 if gun_controller.shooting && (gun_controller.just_pressed || bullet_delay.finished()) {
-                    // gunshot
+                    // plays gunshot sound if gun is shooting
                     commands.spawn((
                         AudioBundle {
                             source: gunshot_handle.clone(),
-                            settings: PlaybackSettings::DESPAWN
+                            settings: PlaybackSettings::REMOVE
                         },
                         GameEntity
                     ));
@@ -58,6 +60,7 @@ pub fn audio_playback(
     }
 }
 
+// Sets ambience volume to 0.3
 pub fn audio_control(
     ambience_query: Query<&AudioSink, With<Ambience>>,
 ) {

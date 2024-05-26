@@ -21,6 +21,7 @@
 use bevy::prelude::*;
 use crate::structs::GameEntity;
 
+// Sets up the lighting in the scene
 pub fn setup(mut commands: Commands) {
     // sun
     commands.spawn(DirectionalLightBundle {

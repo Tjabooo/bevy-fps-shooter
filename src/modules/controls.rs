@@ -1,5 +1,3 @@
-use crate::GameState;
-use crate::game;
 use bevy::prelude::*;
 use bevy_rapier3d::{
     prelude::*,
@@ -20,6 +18,7 @@ use crate::structs::{
 //    }
 //}
 
+// Handles player movement
 pub fn update(
     key_event: Res<ButtonInput<KeyCode>>,
     mut player_query: Query<(&mut Transform, &mut PlayerController), Without<Camera3d>>,

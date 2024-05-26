@@ -414,6 +414,7 @@ pub struct EntityHandler {
     pub gun_handle: Option<Handle<Scene>>,
     pub crosshair_handle: Option<Handle<Image>>,
     pub target_texture_handle: Option<Handle<Image>>,
+    pub text_font_handle: Option<Handle<Font>>
 }
 
 impl Default for EntityHandler {
@@ -422,7 +423,8 @@ impl Default for EntityHandler {
             map_handle: None,
             gun_handle: None,
             crosshair_handle: None,
-            target_texture_handle: None
+            target_texture_handle: None,
+            text_font_handle: None
         }
     }
 }

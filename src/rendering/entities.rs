@@ -1,19 +1,20 @@
-use crate::modules::structs::PlayerEntity;
-use crate::structs::{
-    CameraController,
-    CubemapController,
-    TargetController,
-    GunController,
-    MapController,
-    PlayerController,
-    MenuEntity,
-    GameEntity,
-    TextEntity,
-    EntityHandler,
-    MapImage,
-};
-use crate::GameState;
 use bevy_rapier3d::prelude::*;
+use crate::{
+    GameState,
+    structs::{
+        CameraController,
+        CubemapController,
+        TargetController,
+        GunController,
+        MapController,
+        PlayerController,
+        MenuEntity,
+        GameEntity,
+        TextEntity,
+        EntityHandler,
+        PlayerEntity
+    }
+};
 use bevy_scene_hook::{
     HookedSceneBundle,
     SceneHook
@@ -32,6 +33,7 @@ use bevy::{
     } 
 };
 
+// Loads all the entities needed for the game
 pub fn load_entities(
     mut commands: Commands,
     asset_server: Res<AssetServer>
@@ -40,22 +42,23 @@ pub fn load_entities(
     let gun_handle = asset_server.load("cs1.6_ak-47.glb#Scene0");
     let crosshair_handle = asset_server.load("textures/crosshair.png");
     let target_texture_handle = asset_server.load("textures/default_texture.png");
+    let text_font_handle = asset_server.load("fonts/JetBrainsMonoNLNerdFont-Regular.ttf");
 
     commands.insert_resource(EntityHandler {
         map_handle: Some(map_handle),
         gun_handle: Some(gun_handle),
         crosshair_handle: Some(crosshair_handle),
-        target_texture_handle: Some(target_texture_handle)
+        target_texture_handle: Some(target_texture_handle),
+        text_font_handle: Some(text_font_handle)
     });
 }
 
+// Sets up the game entities
 pub fn setup(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     entity_handler: Res<EntityHandler>,
     player_controller: Res<PlayerController>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-    mut meshes: ResMut<Assets<Mesh>>,
     mut player_entity: ResMut<PlayerEntity>
 ) {
     //skybox
@@ -185,17 +188,18 @@ pub fn setup(
     });
 }
 
+// Spawns the start text
 pub fn spawn_start_text(
     mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    text_entity_query: Query<&TextEntity>
+    text_entity_query: Query<&TextEntity>,
+    entity_handler: Res<EntityHandler>
 ) {
     if text_entity_query.iter().count() == 0 {
         commands.spawn(
             TextBundle::from_section(
                 "Shoot the 'Start' button to begin!",
                 TextStyle {
-                    font: asset_server.load("fonts/JetBrainsMonoNLNerdFont-Regular.ttf"),
+                    font: entity_handler.text_font_handle.clone().expect(""),
                     font_size: 30.0,
                     ..Default::default()
                 }
@@ -209,15 +213,16 @@ pub fn spawn_start_text(
     }
 }
 
-pub fn spawn_fail_text(
+// Spawns the win text
+pub fn spawn_win_text(
     mut commands: Commands,
-    asset_server: Res<AssetServer>
+    entity_handler: Res<EntityHandler>
 ) {
     commands.spawn(
         TextBundle::from_section(
-            "You failed. Shoot the 'Start' button to try again.",
+            "You won! Beat your personal best by trying again!",
             TextStyle {
-                font: asset_server.load("fonts/JetBrainsMonoNLNerdFont-Regular.ttf"),
+                font: entity_handler.text_font_handle.clone().expect(""),
                 font_size: 30.0,
                 ..Default::default()
             }
@@ -230,6 +235,29 @@ pub fn spawn_fail_text(
     ).insert((TextEntity, GameEntity));
 }
 
+// Spawns the fail text
+pub fn spawn_fail_text(
+    mut commands: Commands,
+    entity_handler: Res<EntityHandler>
+) {
+    commands.spawn(
+        TextBundle::from_section(
+            "You failed. Shoot the 'Start' button to try again.",
+            TextStyle {
+                font: entity_handler.text_font_handle.clone().expect(""),
+                font_size: 30.0,
+                ..Default::default()
+            }
+        ).with_style(Style {
+            align_self: AlignSelf::Center,
+            justify_self: JustifySelf::Center,
+            top: Val::Percent(10.0),
+            ..Default::default()
+        })
+    ).insert((TextEntity, GameEntity));
+}
+
+// Rotates the map
 pub fn rotate_map(
     mut query: Query<&mut Transform, With<MapController>>,
     mut map_controller: ResMut<MapController>,
@@ -247,6 +275,7 @@ pub fn rotate_map(
     }
 }
 
+// Rotates the gun
 pub fn rotate_gun(
     mut query: Query<&mut Transform, With <GunController>>,
     mut gun_controller: ResMut<GunController>,
@@ -262,6 +291,7 @@ pub fn rotate_gun(
     };
 }
 
+// Loads the skybox cubemap
 pub fn load_cubemap(
     asset_server: Res<AssetServer>,
     mut images: ResMut<Assets<Image>>,
@@ -286,6 +316,7 @@ pub fn load_cubemap(
     }
 }
 
+// These methods are used to despawn entities
 pub fn despawn_menu_entities(
     mut commands: Commands,
     menu_entity_query: Query<Entity, With<MenuEntity>>

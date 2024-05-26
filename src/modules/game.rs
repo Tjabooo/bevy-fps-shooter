@@ -1,4 +1,3 @@
-use bevy::window::CursorGrabMode;
 use bevy_rapier3d::prelude::*;
 use crate::{
     GameState,
@@ -21,6 +20,7 @@ use crate::structs::{
     MapImage
 };
 use bevy::{
+    window::CursorGrabMode,
     prelude::*,
     input::mouse::MouseMotion,
     diagnostic::{
@@ -34,7 +34,6 @@ pub fn setup(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut window: Query<&mut Window>,
-    target_controller_query: Query<&TargetController>
 ) {
     let mut window = window.get_single_mut().unwrap();
     let text_font = asset_server.load("fonts/JetBrainsMonoNLNerdFont-Regular.ttf");
@@ -127,9 +126,11 @@ pub fn update(
     mut next_level: ResMut<NextState<LevelState>>,
     mut time_controller: ResMut<TimeController>
 ) {
+    let state = *current_state.get();
+
     if key_event.just_pressed(KeyCode::Escape) {
-        if *current_state.get() == GameState::Playing || *current_state.get() == GameState::Start {
-            last_state.state = Some(*current_state.get());
+        if state == GameState::Playing || state == GameState::Start || state == GameState::Won {
+            last_state.state = Some(state);
             next_state.set(GameState::PauseMenu);
         }
     }
@@ -154,8 +155,17 @@ pub fn initiate_level(
     mut time_controller: ResMut<TimeController>,
     map_image_query: Query<Entity, With<MapImage>>
 ) {
-    let ball_material = materials.add(StandardMaterial { base_color_texture: entity_handler.target_texture_handle.clone(), ..Default::default() }); 
-    let ball_mesh = meshes.add(Sphere { radius: 0.1 });
+    let ball_material = materials.add(
+        StandardMaterial { 
+            base_color_texture: entity_handler.target_texture_handle.clone(), 
+            ..Default::default() 
+        }
+    ); 
+    let ball_mesh = meshes.add(
+        Sphere { 
+            radius: 0.1 
+        }
+    );
 
     let mut map_image_handle: StandardMaterial = Color::SILVER.into();
 
@@ -200,9 +210,7 @@ pub fn initiate_level(
     ));
 
     match current_level.get() {
-        LevelState::NoLevel => {
-            return
-        }
+        LevelState::NoLevel => {}
         LevelState::Failed => {
             println!(":3");
         }
@@ -357,17 +365,13 @@ pub fn update_level_timer(
 pub fn change_level_state(
     target_query: Query<Entity, With<TargetController>>,
     current_level: Res<State<LevelState>>,
-    current_state: Res<State<GameState>>,
-    time_controller: Res<TimeController>,
     mut next_level: ResMut<NextState<LevelState>>,
-    mut next_state: ResMut<NextState<GameState>>,
-    mut player_query: Query<(&mut Transform, &PlayerController)>,
+    mut next_state: ResMut<NextState<GameState>>
 ) {
+    // check if all targets are destroyed
     if target_query.iter().count() <= 0 {
         match current_level.get() {
-            LevelState::NoLevel => {
-                return
-            }
+            LevelState::NoLevel => {}
             LevelState::Failed => {
                 next_level.set(LevelState::Level1);
                 next_state.set(GameState::Start);
@@ -389,12 +393,11 @@ pub fn change_level_state(
                 next_state.set(GameState::Start);
             }
             LevelState::Level5 => {
-                // ADD 'WINNER' SCREEN WHERE YOU ENCOURAGE THEM TO TRY TO BEAT THEIR PB'S
+                next_level.set(LevelState::NoLevel);
+                next_state.set(GameState::Won);
             }
         }
     }
-    //println!("{:?}", target_query.iter().count());
-    //println!("{:?}", current_level.get());
 }
 
 // This method handles mouse motion
@@ -440,8 +443,7 @@ pub fn diagnostics(
     mut time_left_query: Query<&mut Text, (With<TimeText>, Without<TargetText>, Without<LevelText>)>,
     time_controller: Res<TimeController>,
     mut level_text_query: Query<&mut Text, (With<LevelText>, Without<TargetText>, Without<TimeText>)>,
-    current_level: Res<State<LevelState>>,
-    level_state: Res<LevelState>
+    current_level: Res<State<LevelState>>
 ) {
     let mut fps_text = fps_text_query.get_single_mut().unwrap();
     let Some(raw_fps) = diagnostics.get(&FrameTimeDiagnosticsPlugin::FPS) else { return };
@@ -459,8 +461,8 @@ pub fn diagnostics(
         LevelState::Level2 => ["2", "EASY"],
         LevelState::Level3 => ["3", "MEDIUM"],
         LevelState::Level4 => ["4", "HARD"],
-        LevelState::Level5 => ["5", "VERY HARD"],
-        LevelState::Failed => ["FAILED", "FAILED"],
+        LevelState::Level5 => ["5", "IMPOSSIBLE"],
+        LevelState::Failed => ["FAILED", "FAILED"]
     };
 
     fps_text.sections[0].value = format!(
@@ -492,4 +494,8 @@ pub fn in_start_state(game_state: Res<State<GameState>>) -> bool {
 
 pub fn in_playing_state(game_state: Res<State<GameState>>) -> bool {
     game_state.get() == &GameState::Playing
+}
+
+pub fn in_won_state(game_state: Res<State<GameState>>) -> bool {
+    game_state.get() == &GameState::Won
 }

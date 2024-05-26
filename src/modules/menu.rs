@@ -13,7 +13,7 @@ use bevy::{
     window::CursorGrabMode
 };
 
-
+// Sets up the main menu
 pub fn setup_main_menu(
     mut commands: Commands
 ) { 
@@ -102,6 +102,7 @@ pub fn setup_main_menu(
     });
 }
 
+// Handles menu interactions
 pub fn menu_interactions(
     interaction_query: Query<
         (&Interaction, &MenuButtonAction),
@@ -134,6 +135,7 @@ pub fn menu_interactions(
     }
 }
 
+// Sets up the pause menu
 pub fn setup_pause_menu(
     mut commands: Commands,
     mut window: Query<&mut Window>

@@ -17,7 +17,7 @@ use crate::{
         PlayerEntity
     }
 };
-use bevy_inspector_egui::quick::WorldInspectorPlugin;
+// use bevy_inspector_egui::quick::WorldInspectorPlugin;
 use bevy_scene_hook::HookPlugin;
 use bevy_rapier3d::prelude::*;
 use bevy::{
@@ -52,7 +52,8 @@ pub enum GameState {
     PauseMenu,
     Start,
     Playing,
-    Failed
+    Failed,
+    Won
 }
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash, States, Resource, Default)]
@@ -76,7 +77,7 @@ fn main() {
                 //resolution: (800., 600.).into(),
                 mode: WindowMode::BorderlessFullscreen,
                 resolution: WindowResolution::new(1920., 1080.),
-                present_mode: PresentMode::AutoNoVsync,
+                present_mode: PresentMode::AutoVsync,
                 window_theme: Some(WindowTheme::Dark),
                 cursor: Cursor { 
                     icon: default(),
@@ -169,9 +170,17 @@ fn main() {
         gunplay::update,
         audio::audio_playback,
     ).run_if(game::in_playing_state))
+    // won
+    .add_systems(Update, (
+        game::update,
+        game::mouse_callback,
+        game::diagnostics,
+        controls::update
+    ).run_if(game::in_won_state))
     // text systems
     .add_systems(OnEnter(GameState::Start), entities::spawn_start_text)
     .add_systems(OnEnter(LevelState::Failed), entities::spawn_fail_text)
+    .add_systems(OnEnter(GameState::Won), entities::spawn_win_text)
     // cleanup systems
     .add_systems(OnExit(GameState::MainMenu), entities::despawn_menu_entities)
     .add_systems(OnExit(GameState::PauseMenu), entities::despawn_menu_entities)
@@ -189,6 +198,10 @@ fn main() {
     .add_systems(OnTransition {
         from: GameState::PauseMenu,
         to: GameState::Start
+    }, game::change_cursor_state)
+    .add_systems(OnTransition {
+        from: GameState::PauseMenu,
+        to: GameState::Won
     }, game::change_cursor_state)
     .run();
 }
