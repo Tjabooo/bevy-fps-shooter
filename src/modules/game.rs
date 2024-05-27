@@ -211,9 +211,7 @@ pub fn initiate_level(
 
     match current_level.get() {
         LevelState::NoLevel => {}
-        LevelState::Failed => {
-            println!(":3");
-        }
+        LevelState::Failed => {}
         LevelState::Level1 => {
             // set timer
             time_controller.set_timer(level_1_time);
