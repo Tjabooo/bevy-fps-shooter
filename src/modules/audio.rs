@@ -1,5 +1,7 @@
-use bevy::prelude::*;
-use bevy::audio::prelude::AudioSink;
+use bevy::{
+    audio::prelude::AudioSink,
+    prelude::*
+};
 use crate::structs::{
     AudioController,
     GunController,
@@ -38,23 +40,21 @@ pub fn audio_playback(
                         settings: PlaybackSettings::ONCE
                     },
                     Ambience,
-                    GameEntity
+                    GameEntity,                    
                 ));
             }
         }
 
         if let Some(gunshot_handle) = &audio_controller.gunshot_handle {
-            if let Some(bullet_delay) = &gun_controller.bullet_delay {
-                if gun_controller.shooting && (gun_controller.just_pressed || bullet_delay.finished()) {
-                    // plays gunshot sound if gun is shooting
-                    commands.spawn((
-                        AudioBundle {
-                            source: gunshot_handle.clone(),
-                            settings: PlaybackSettings::REMOVE
-                        },
-                        GameEntity
-                    ));
-                }
+            // play gunshot every time i shoot
+            if gun_controller.play_audio {
+                commands.spawn((
+                    AudioBundle {
+                        source: gunshot_handle.clone(),
+                        settings: PlaybackSettings::REMOVE
+                    },
+                    GameEntity,
+                ));
             }
         }
     }
@@ -62,7 +62,7 @@ pub fn audio_playback(
 
 // Sets ambience volume to 0.3
 pub fn audio_control(
-    ambience_query: Query<&AudioSink, With<Ambience>>,
+    ambience_query: Query<&AudioSink, With<Ambience>>
 ) {
     if let Ok(ambience_sink) = ambience_query.get_single() {
         ambience_sink.set_volume(0.3);

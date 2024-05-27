@@ -45,6 +45,8 @@ pub fn update(
                                 // resets bullet delay
                                 bullet_delay.reset();
                                 gun_controller.just_pressed = false;
+                                gun_controller.play_audio = true;
+                                
                                 // defines the bullet raycast values
                                 let bullet_ray = Ray3d {
                                     origin: camera_transform.translation(),
@@ -83,6 +85,8 @@ pub fn update(
                                         next_state.set(GameState::Playing);
                                     }
                                 }
+                            } else {
+                                gun_controller.play_audio = false;
                             }
                         }
                     }

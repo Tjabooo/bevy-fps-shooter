@@ -48,7 +48,8 @@ pub struct GunController {
     pub bullet_delay: Option<Timer>,
     pub just_pressed: bool,
     pub is_rotated: bool,
-    pub model_handle: Option<Handle<Scene>>
+    pub model_handle: Option<Handle<Scene>>,
+    pub play_audio: bool
 }
 
 impl Default for GunController {
@@ -58,7 +59,8 @@ impl Default for GunController {
             bullet_delay: None,
             just_pressed: false,
             is_rotated: false,
-            model_handle: None
+            model_handle: None,
+            play_audio: false
         }
     }
 }

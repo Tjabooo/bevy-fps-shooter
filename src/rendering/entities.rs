@@ -129,7 +129,8 @@ pub fn setup(
                     bullet_delay: Some(Timer::from_seconds(0.1, TimerMode::Repeating)),
                     just_pressed: false,
                     is_rotated: false,
-                    model_handle: entity_handler.gun_handle.clone()
+                    model_handle: entity_handler.gun_handle.clone(),
+                    play_audio: false
                 },
             ));
         });
@@ -179,7 +180,8 @@ pub fn setup(
         bullet_delay: Some(Timer::from_seconds(0.1, TimerMode::Repeating)),
         just_pressed: false,
         is_rotated: false,
-        model_handle: entity_handler.gun_handle.clone()
+        model_handle: entity_handler.gun_handle.clone(),
+        play_audio: false
     });
 
     commands.insert_resource(CubemapController {
