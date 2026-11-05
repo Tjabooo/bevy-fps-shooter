@@ -23,8 +23,8 @@ Controls as found in the source:
 | Mouse | Look |
 | Left mouse button | Shoot |
 | Space | Jump |
-| Left Shift / Left Ctrl | Sprint / crouch |
-| E | Interact |
+| Left Shift | Walk slowly |
+| Left Ctrl | Crouch |
 | Escape | Pause menu |
 
 ## Project layout
@@ -34,4 +34,4 @@ Controls as found in the source:
 - `assets/`: textures, levels (PNG level maps), models, sounds and a font.
 
 ## Assets
-The map (`de_dust2.glb`), rifle model and sounds are fan-made/derived from Counter-Strike, used here for a non-commercial learning project. They belong to their respective owners and are not covered by this repository's license.
+The map (`de_dust2.glb`), the rifle model and the sounds are named after and appear to be derived from Counter-Strike. They belong to their respective owners, are used here for a non-commercial learning project, and are not covered by this repository's license.
